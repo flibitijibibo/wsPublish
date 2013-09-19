@@ -19,33 +19,33 @@ extern "C" {
 
 /* Steam Init/Update/Shutdown */
 
-int STEAM_Initialize(/* TODO: Function pointers */);
+EXPORTFN int STEAM_Initialize(/* TODO: Function pointers */);
 
-void STEAM_Update();
+EXPORTFN void STEAM_Update();
 
-void STEAM_Shutdown();
+EXPORTFN void STEAM_Shutdown();
 
 /* Steam Cloud */
 
-int STEAM_IsCloudEnabled();
+EXPORTFN int STEAM_IsCloudEnabled();
 
-int STEAM_FileExists(const char *name);
+EXPORTFN int STEAM_FileExists(const char *name);
 
-int STEAM_WriteFile(const char *name, const void *data, const int length);
+EXPORTFN int STEAM_WriteFile(const char *name, const void *data, const int length);
 
-int STEAM_ReadFile(const char *name, void *data, const int length);
+EXPORTFN int STEAM_ReadFile(const char *name, void *data, const int length);
 
-int STEAM_DeleteFile(const char *name);
+EXPORTFN int STEAM_DeleteFile(const char *name);
 
 /* Steam UGC */
 
-void STEAM_PublishFile(const char *name);
+EXPORTFN void STEAM_PublishFile(const char *name);
 
-void STEAM_GetPublishedFile(const unsigned long fileID);
+EXPORTFN void STEAM_GetPublishedFile(const unsigned long fileID);
 
-void STEAM_UpdatePublishedFile(const unsigned long fileID);
+EXPORTFN void STEAM_UpdatePublishedFile(const unsigned long fileID);
 
-void STEAM_DeletePublishedFile(const unsigned long fileID);
+EXPORTFN void STEAM_DeletePublishedFile(const unsigned long fileID);
 
 #undef EXPORTFN
 #undef DELEGATECALL
