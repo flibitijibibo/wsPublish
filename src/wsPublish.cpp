@@ -28,21 +28,25 @@ public:
 		deletedFileDelegate = deletedFile;
 	}
 
+	#define CHECK_FAILURE(CallbackName) \
+		if (bIOFailure) \
+		{ \
+			printf( \
+				"%s: INTERNAL STEAM ERROR: %i\n", \
+				CallbackName, \
+				result->m_eResult \
+			); \
+		} \
+		else \
+		{ \
+			printf("%s: SUCCESS\n", CallbackName); \
+		}
+
 	void SharedFile(
 		RemoteStorageFileShareResult_t *result,
 		bool bIOFailure
 	) {
-		if (bIOFailure)
-		{
-			printf(
-				"SharedFile: INTERNAL STEAM ERROR: %i\n",
-				result->m_eResult
-			);
-		}
-		else
-		{
-			printf("SharedFile: SUCCESS\n");
-		}
+		CHECK_FAILURE("SharedFile")
 		if (sharedFileDelegate)
 		{
 			sharedFileDelegate(!bIOFailure);
@@ -53,17 +57,7 @@ public:
 		RemoteStoragePublishFileResult_t *result,
 		bool bIOFailure
 	) {
-		if (bIOFailure)
-		{
-			printf(
-				"PublishedFile: INTERNAL STEAM ERROR: %i\n",
-				result->m_eResult
-			);
-		}
-		else
-		{
-			printf("PublishedFile: SUCCESS\n");
-		}
+		CHECK_FAILURE("PublishedFile")
 		if (publishedFileDelegate)
 		{
 			publishedFileDelegate(
@@ -77,17 +71,7 @@ public:
 		RemoteStorageUpdatePublishedFileResult_t *result,
 		bool bIOFailure
 	) {
-		if (bIOFailure)
-		{
-			printf(
-				"UpdatedFile: INTERNAL STEAM ERROR: %i\n",
-				result->m_eResult
-			);
-		}
-		else
-		{
-			printf("UpdatedFile: SUCCESS\n");
-		}
+		CHECK_FAILURE("UpdatedFile")
 		if (updatedFileDelegate)
 		{
 			updatedFileDelegate(!bIOFailure);
@@ -98,22 +82,14 @@ public:
 		RemoteStorageDeletePublishedFileResult_t *result,
 		bool bIOFailure
 	) {
-		if (bIOFailure)
-		{
-			printf(
-				"DeletedFile: INTERNAL STEAM ERROR: %i\n",
-				result->m_eResult
-			);
-		}
-		else
-		{
-			printf("DeletedFile: SUCCESS\n");
-		}
+		CHECK_FAILURE("DeletedFile")
 		if (deletedFileDelegate)
 		{
 			deletedFileDelegate(!bIOFailure);
 		}
 	}
+
+	#undef CHECK_FAILURE
 };
 
 static SteamCallbackContainer *callbackContainer;
@@ -213,8 +189,8 @@ void STEAM_PublishFile(
 	const STEAM_EFileType type
 ) {
 	static CCallResult<SteamCallbackContainer, RemoteStoragePublishFileResult_t> filePublishResult;
-	static SteamParamStringArray_t stringParams;
 
+	SteamParamStringArray_t stringParams;
 	stringParams.m_ppStrings = tags;
 	stringParams.m_nNumStrings = numTags;
 
@@ -254,6 +230,8 @@ void STEAM_UpdatePublishedFile(
 	const int numTags,
 	const STEAM_EFileVisibility visibility
 ) {
+	static CCallResult<SteamCallbackContainer, RemoteStorageUpdatePublishedFileResult_t> fileUpdateResult;
+
 	PublishedFileUpdateHandle_t handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest(fileID);
 
 	SteamParamStringArray_t stringParams;
@@ -267,7 +245,7 @@ void STEAM_UpdatePublishedFile(
 	SteamRemoteStorage()->UpdatePublishedFileTags(handle, &stringParams);
 	SteamRemoteStorage()->UpdatePublishedFileVisibility(handle, (ERemoteStoragePublishedFileVisibility) visibility);
 
-	static CCallResult<SteamCallbackContainer, RemoteStorageUpdatePublishedFileResult_t> fileUpdateResult;
+
 	SteamAPICall_t hSteamAPICall = 0;
 	hSteamAPICall = SteamRemoteStorage()->CommitPublishedFileUpdate(handle);
 
