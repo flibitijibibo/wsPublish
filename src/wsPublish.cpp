@@ -10,41 +10,109 @@
 class SteamCallbackContainer
 {
 private:
-	/* TODO: Delegates... */
+	STEAM_OnSharedFile sharedFileDelegate;
+	STEAM_OnPublishedFile publishedFileDelegate;
+	STEAM_OnUpdatedFile updatedFileDelegate;
+	STEAM_OnDeletedFile deletedFileDelegate;
 
 public:
-	SteamCallbackContainer(/* TODO: Function pointers */)
-	{
-		/* TODO: Assign private delegates */
+	SteamCallbackContainer(
+		STEAM_OnSharedFile sharedFile,
+		STEAM_OnPublishedFile publishedFile,
+		STEAM_OnUpdatedFile updatedFile,
+		STEAM_OnDeletedFile deletedFile
+	) {
+		sharedFileDelegate = sharedFile;
+		publishedFileDelegate = publishedFile;
+		updatedFileDelegate = updatedFile;
+		deletedFileDelegate = deletedFile;
 	}
 
 	void SharedFile(
 		RemoteStorageFileShareResult_t *result,
 		bool bIOFailure
 	) {
-		/* TODO: Check info, delegate call */
+		if (bIOFailure)
+		{
+			printf(
+				"SharedFile: INTERNAL STEAM ERROR: %d\n",
+				result->m_eResult
+			);
+		}
+		else
+		{
+			printf("SharedFile: SUCCESS\n");
+		}
+		if (sharedFileDelegate)
+		{
+			sharedFileDelegate(!bIOFailure);
+		}
 	}
 
 	void PublishedFile(
 		RemoteStoragePublishFileResult_t *result,
 		bool bIOFailure
 	) {
-		/* TODO: Check info, delegate call */
-		/* TODO: Be sure license agreement happens at the end of this! */
+		if (bIOFailure)
+		{
+			printf(
+				"PublishedFile: INTERNAL STEAM ERROR: %d\n",
+				result->m_eResult
+			);
+		}
+		else
+		{
+			printf("PublishedFile: SUCCESS\n");
+		}
+		if (publishedFileDelegate)
+		{
+			publishedFileDelegate(
+				!bIOFailure,
+				result->m_nPublishedFileId
+			);
+		}
 	}
 
 	void UpdatedFile(
 		RemoteStorageUpdatePublishedFileResult_t *result,
 		bool bIOFailure
 	) {
-		/* TODO: Check info, delegate call */
+		if (bIOFailure)
+		{
+			printf(
+				"UpdatedFile: INTERNAL STEAM ERROR: %d\n",
+				result->m_eResult
+			);
+		}
+		else
+		{
+			printf("UpdatedFile: SUCCESS\n");
+		}
+		if (updatedFileDelegate)
+		{
+			updatedFileDelegate(!bIOFailure);
+		}
 	}
 
 	void DeletedFile(
-		RemoteStoragePublishedFileDeleted_t *result,
+		RemoteStorageDeletePublishedFileResult_t *result,
 		bool bIOFailure
 	) {
-		/* TODO: Check info, delegate call */
+		if (bIOFailure)
+		{
+			printf(
+				"DeletedFile: INTERNAL STEAM ERROR: %d\n",
+				result->m_eResult
+			);
+		}
+		else
+		{
+			printf("DeletedFile: SUCCESS\n");
+		}
+		if (deletedFileDelegate)
+		{
+			deletedFileDelegate(!bIOFailure);
+		}
 	}
 };
 
@@ -52,14 +120,21 @@ static SteamCallbackContainer *callbackContainer;
 
 /* Steam Init/Update/Shutdown */
 
-int STEAM_Initialize(/* TODO: Function pointers */)
-{
+int STEAM_Initialize(
+	STEAM_OnSharedFile sharedFileDelegate,
+	STEAM_OnPublishedFile publishedFileDelegate,
+	STEAM_OnUpdatedFile updatedFileDelegate,
+	STEAM_OnDeletedFile deletedFileDelegate
+) {
 	if (!SteamAPI_Init())
 	{
 		return 0;
 	}
 	callbackContainer = new SteamCallbackContainer(
-		/* TODO: Function pointers */
+		sharedFileDelegate,
+		publishedFileDelegate,
+		updatedFileDelegate,
+		deletedFileDelegate
 	);
 	return 1;
 }
@@ -212,7 +287,7 @@ void STEAM_UpdatePublishedFile(
 
 void STEAM_DeletePublishedFile(const unsigned long fileID)
 {
-	static CCallResult<SteamCallbackContainer, RemoteStoragePublishedFileDeleted_t> fileDeleteResult;
+	static CCallResult<SteamCallbackContainer, RemoteStorageDeletePublishedFileResult_t> fileDeleteResult;
 
 	SteamAPICall_t hSteamAPICall = 0;
 	hSteamAPICall = SteamRemoteStorage()->DeletePublishedFile(fileID);

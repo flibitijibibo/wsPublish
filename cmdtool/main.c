@@ -5,10 +5,35 @@
 #include <stdio.h>
 #include <wsPublish/wsPublish.h>
 
+void CMD_OnSharedFile(int success)
+{
+	// TODO
+}
+
+void CMD_OnPublishedFile(int success, unsigned long fileID)
+{
+	// TODO:
+}
+
+void CMD_OnUpdatedFile(int success)
+{
+	// TODO
+}
+
+void CMD_OnDeletedFile(int success)
+{
+	// TODO
+}
+
 int main(int argc, char** argv)
 {
-	if (!STEAM_Initialize())
-	{
+	if (	!STEAM_Initialize(
+			CMD_OnSharedFile,
+			CMD_OnPublishedFile,
+			CMD_OnUpdatedFile,
+			CMD_OnDeletedFile
+		)
+	) {
 		printf("Steam failed to initialize!\n");
 		return 0;
 	}

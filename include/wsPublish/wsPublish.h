@@ -17,10 +17,20 @@ extern "C" {
 	#define DELEGATECALL
 #endif
 
+/* Delegates for Steam callbacks */
+
+typedef void (DELEGATECALL *STEAM_OnSharedFile)(int);
+typedef void (DELEGATECALL *STEAM_OnPublishedFile)(int, unsigned long);
+typedef void (DELEGATECALL *STEAM_OnUpdatedFile)(int);
+typedef void (DELEGATECALL *STEAM_OnDeletedFile)(int);
+
 /* Steam Init/Update/Shutdown */
 
 EXPORTFN int STEAM_Initialize(
-	/* TODO: Function pointers */
+	STEAM_OnSharedFile sharedFileDelegate,
+	STEAM_OnPublishedFile publishedFileDelegate,
+	STEAM_OnUpdatedFile updatedFileDelegate,
+	STEAM_OnDeletedFile deletedFileDelegate
 );
 
 EXPORTFN void STEAM_Update();
