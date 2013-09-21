@@ -21,10 +21,10 @@ ENDIF()
 
 # Compiler Flags
 IF(WSP_DEBUG)
-	SET(CMAKE_C_FLAGS "${ARCHFLAG} -g -Wall")
+	SET(CMAKE_C_FLAGS "${ARCHFLAG} -g -Wall -pedantic")
 	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -g -Wall")
 ELSE()
-	SET(CMAKE_C_FLAGS "${ARCHFLAG} -Wall")
+	SET(CMAKE_C_FLAGS "${ARCHFLAG} -Wall -pedantic")
 	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -Wall")
 ENDIF()
 

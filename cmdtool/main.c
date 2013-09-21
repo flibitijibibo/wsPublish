@@ -7,22 +7,22 @@
 
 void CMD_OnSharedFile(const int success)
 {
-	// TODO
+	/* TODO */
 }
 
 void CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
-	// TODO:
+	/* TODO */
 }
 
 void CMD_OnUpdatedFile(const int success)
 {
-	// TODO
+	/* TODO */
 }
 
 void CMD_OnDeletedFile(const int success)
 {
-	// TODO
+	/* TODO */
 }
 
 int main(int argc, char** argv)
