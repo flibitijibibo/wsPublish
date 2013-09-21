@@ -12,15 +12,40 @@ class SteamCallbackContainer
 private:
 	/* TODO: Delegates... */
 
-	/* TODO: Callbacks... */
-
 public:
 	SteamCallbackContainer(/* TODO: Function pointers */)
 	{
 		/* TODO: Assign private delegates */
 	}
 
-	/* TODO: Public async entry points */
+	void SharedFile(
+		RemoteStorageFileShareResult_t *result,
+		bool bIOFailure
+	) {
+		/* TODO: Check info, delegate call */
+	}
+
+	void PublishedFile(
+		RemoteStoragePublishFileResult_t *result,
+		bool bIOFailure
+	) {
+		/* TODO: Check info, delegate call */
+		/* TODO: Be sure license agreement happens at the end of this! */
+	}
+
+	void UpdatedFile(
+		RemoteStorageUpdatePublishedFileResult_t *result,
+		bool bIOFailure
+	) {
+		/* TODO: Check info, delegate call */
+	}
+
+	void DeletedFile(
+		RemoteStoragePublishedFileDeleted_t *result,
+		bool bIOFailure
+	) {
+		/* TODO: Check info, delegate call */
+	}
 };
 
 static SteamCallbackContainer *callbackContainer;
@@ -33,7 +58,9 @@ int STEAM_Initialize(/* TODO: Function pointers */)
 	{
 		return 0;
 	}
-	callbackContainer = new SteamCallbackContainer(/* TODO: Function pointers */);
+	callbackContainer = new SteamCallbackContainer(
+		/* TODO: Function pointers */
+	);
 	return 1;
 }
 
@@ -76,27 +103,130 @@ int STEAM_DeleteFile(const char *name)
 	return SteamRemoteStorage()->FileDelete(name);
 }
 
+void STEAM_ShareFile(const char *name)
+{
+	static CCallResult<SteamCallbackContainer, RemoteStorageFileShareResult_t> fileSharedResult;
+
+	SteamAPICall_t hSteamAPICall = 0;
+	hSteamAPICall = SteamRemoteStorage()->FileShare(name);
+
+	if (hSteamAPICall != 0)
+	{
+		fileSharedResult.Set(
+			hSteamAPICall,
+			callbackContainer,
+			&SteamCallbackContainer::SharedFile
+		);
+	}
+	else
+	{
+		printf("Steam file share did not happen! D:\n");
+	}
+}
+
 /* Steam UGC */
 
-void STEAM_PublishFile(const char *name)
-{
-	// SteamAPICall_t callback = SteamRemoteStorage()->FileShare(name);
-	/* TODO: Async call! */
-	/* TODO: Be sure license agreement happens at the end of this! */
+void STEAM_PublishFile(
+	const unsigned int appid,
+	const char *name,
+	const char *previewName,
+	const char *title,
+	const char *description,
+	const char **tags,
+	const int numTags,
+	const STEAM_EFileVisibility visibility,
+	const STEAM_EFileType type
+) {
+	static CCallResult<SteamCallbackContainer, RemoteStoragePublishFileResult_t> filePublishResult;
+	static SteamParamStringArray_t stringParams;
+
+	stringParams.m_ppStrings = tags;
+	stringParams.m_nNumStrings = numTags;
+
+	SteamAPICall_t hSteamAPICall = 0;
+	hSteamAPICall = SteamRemoteStorage()->PublishWorkshopFile(
+		name,
+		previewName,
+		appid,
+		title,
+		description,
+		(ERemoteStoragePublishedFileVisibility) visibility,
+		&stringParams,
+		(EWorkshopFileType) type
+	);
+
+	if (hSteamAPICall != 0)
+	{
+		filePublishResult.Set(
+			hSteamAPICall,
+			callbackContainer,
+			&SteamCallbackContainer::PublishedFile
+		);
+	}
+	else
+	{
+		printf("Steam file publish did not happen! D:\n");
+	}
 }
 
-void STEAM_GetPublishedFile(const unsigned long fileID)
-{
-	/* TODO: GetFile with PublishedFileId_t */
-}
+void STEAM_UpdatePublishedFile(
+	const unsigned long fileID,
+	const char *name,
+	const char *previewName,
+	const char *title,
+	const char *description,
+	const char **tags,
+	const int numTags,
+	const STEAM_EFileVisibility visibility
+) {
+	PublishedFileUpdateHandle_t handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest(fileID);
 
-void STEAM_UpdatePublishedFile(const unsigned long fileID)
-{
-	/* TODO: Run updates for all properties using PublishedFileId_t */
+	SteamParamStringArray_t stringParams;
+	stringParams.m_ppStrings = tags;
+	stringParams.m_nNumStrings = numTags;
+
+	SteamRemoteStorage()->UpdatePublishedFileFile(handle, name);
+	SteamRemoteStorage()->UpdatePublishedFilePreviewFile(handle, previewName);
+	SteamRemoteStorage()->UpdatePublishedFileTitle(handle, title);
+	SteamRemoteStorage()->UpdatePublishedFileDescription(handle, description);
+	SteamRemoteStorage()->UpdatePublishedFileTags(handle, &stringParams);
+	SteamRemoteStorage()->UpdatePublishedFileVisibility(handle, (ERemoteStoragePublishedFileVisibility) visibility);
+
+	static CCallResult<SteamCallbackContainer, RemoteStorageUpdatePublishedFileResult_t> fileUpdateResult;
+	SteamAPICall_t hSteamAPICall = 0;
+	hSteamAPICall = SteamRemoteStorage()->CommitPublishedFileUpdate(handle);
+
+	if (hSteamAPICall != 0)
+	{
+		fileUpdateResult.Set(
+			hSteamAPICall,
+			callbackContainer,
+			&SteamCallbackContainer::UpdatedFile
+		);
+	}
+	else
+	{
+		printf("Steam file update did not happen! D:\n");
+	}
 }
 
 void STEAM_DeletePublishedFile(const unsigned long fileID)
 {
-	// SteamAPICall_t callback = DeletePublishedFile(fileID);
-	/* TODO: Async call? */
+	static CCallResult<SteamCallbackContainer, RemoteStoragePublishedFileDeleted_t> fileDeleteResult;
+
+	SteamAPICall_t hSteamAPICall = 0;
+	hSteamAPICall = SteamRemoteStorage()->DeletePublishedFile(fileID);
+
+	if (hSteamAPICall != 0)
+	{
+		fileDeleteResult.Set(
+			hSteamAPICall,
+			callbackContainer,
+			&SteamCallbackContainer::DeletedFile
+		);
+	}
+	else
+	{
+		printf("Steam file delete did not happen! D:\n");
+	}
 }
