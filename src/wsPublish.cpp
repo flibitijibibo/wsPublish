@@ -115,6 +115,11 @@ int STEAM_Initialize(
 	return 1;
 }
 
+unsigned int STEAM_GetAppID()
+{
+	return SteamUtils()->GetAppID();
+}
+
 void STEAM_Update()
 {
 	SteamAPI_RunCallbacks();

@@ -18,6 +18,7 @@
 #define MAX_FILENAME_SIZE	32
 #define UPDATE_TIME_MS		1000
 
+/* Structure used to store Steam Workshop item information */
 typedef struct CMD_WorkshopItem_s
 {
 	const char *name;
@@ -30,6 +31,11 @@ typedef struct CMD_WorkshopItem_s
 	STEAM_EFileType type;
 } CMD_WorkshopItem_t;
 
+/* Steam Workshop Item Information */
+static CMD_WorkshopItem_t items[MAX_WORKSHOP_ITEMS];
+static unsigned long itemID[MAX_WORKSHOP_ITEMS];
+
+/* Number of Steam callbacks running, can be used to check current item index */
 static int operationsRunning;
 
 void CMD_OnSharedFile(const int success)
@@ -62,10 +68,6 @@ int main(int argc, char** argv)
 	#define FOREACH_ITEM for (i = 2; i < argc; i += 1)
 	#define ITEM argv[i]
 	#define ITEMINDEX (i - 2)
-
-	/* Workshop Entries */
-	CMD_WorkshopItem_t items[MAX_WORKSHOP_ITEMS];
-	unsigned long itemID[MAX_WORKSHOP_ITEMS];
 
 	/* Used to obtain zipfile data, push to Steam Cloud */
 	unsigned char *data = NULL;
@@ -187,7 +189,7 @@ int main(int argc, char** argv)
 		{
 			printf("Queueing %s for Workshop publication...", ITEM);
 			STEAM_PublishFile(
-				0, /* TODO: Get AppID */
+				STEAM_GetAppID(),
 				items[ITEMINDEX].name,
 				items[ITEMINDEX].previewName,
 				items[ITEMINDEX].title,

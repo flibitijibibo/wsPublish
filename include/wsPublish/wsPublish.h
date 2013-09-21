@@ -39,6 +39,8 @@ EXPORTFN int STEAM_Initialize(
 	const STEAM_OnDeletedFile deletedFileDelegate
 );
 
+EXPORTFN unsigned int STEAM_GetAppID();
+
 EXPORTFN void STEAM_Update();
 
 EXPORTFN void STEAM_Shutdown();
