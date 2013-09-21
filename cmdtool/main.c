@@ -185,10 +185,7 @@ int main(int argc, char** argv)
 		/* Publish all files on Steam Workshop */
 		FOREACH_ITEM
 		{
-			printf(
-				"Queueing %s for Workshop publication...",
-				ITEM
-			);
+			printf("Queueing %s for Workshop publication...", ITEM);
 			STEAM_PublishFile(
 				0, /* TODO: Get AppID */
 				items[ITEMINDEX].name,
@@ -256,12 +253,16 @@ int main(int argc, char** argv)
 		puts("\n");
 	}
 
-	/* Steam Update Loop */
+	/* Steam Asynchronous Calls */
+
 	puts("Running Steam callbacks...\n");
+	STEAM_Update();
+
+	/* Wait for all operations to complete. */
+
 	while (operationsRunning > 0)
 	{
 		puts(".");
-		STEAM_Update();
 		sleepms(UPDATE_TIME_MS);
 	}
 	puts("\nOperation Completed!\n");
