@@ -19,18 +19,24 @@ extern "C" {
 
 /* Delegates for Steam callbacks */
 
-typedef void (DELEGATECALL *STEAM_OnSharedFile)(int);
-typedef void (DELEGATECALL *STEAM_OnPublishedFile)(int, unsigned long);
-typedef void (DELEGATECALL *STEAM_OnUpdatedFile)(int);
-typedef void (DELEGATECALL *STEAM_OnDeletedFile)(int);
+typedef void (DELEGATECALL *STEAM_OnSharedFile)(const int);
+
+typedef void (DELEGATECALL *STEAM_OnPublishedFile)(
+	const int,
+	const unsigned long
+);
+
+typedef void (DELEGATECALL *STEAM_OnUpdatedFile)(const int);
+
+typedef void (DELEGATECALL *STEAM_OnDeletedFile)(const int);
 
 /* Steam Init/Update/Shutdown */
 
 EXPORTFN int STEAM_Initialize(
-	STEAM_OnSharedFile sharedFileDelegate,
-	STEAM_OnPublishedFile publishedFileDelegate,
-	STEAM_OnUpdatedFile updatedFileDelegate,
-	STEAM_OnDeletedFile deletedFileDelegate
+	const STEAM_OnSharedFile sharedFileDelegate,
+	const STEAM_OnPublishedFile publishedFileDelegate,
+	const STEAM_OnUpdatedFile updatedFileDelegate,
+	const STEAM_OnDeletedFile deletedFileDelegate
 );
 
 EXPORTFN void STEAM_Update();

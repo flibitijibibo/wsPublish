@@ -17,10 +17,10 @@ private:
 
 public:
 	SteamCallbackContainer(
-		STEAM_OnSharedFile sharedFile,
-		STEAM_OnPublishedFile publishedFile,
-		STEAM_OnUpdatedFile updatedFile,
-		STEAM_OnDeletedFile deletedFile
+		const STEAM_OnSharedFile sharedFile,
+		const STEAM_OnPublishedFile publishedFile,
+		const STEAM_OnUpdatedFile updatedFile,
+		const STEAM_OnDeletedFile deletedFile
 	) {
 		sharedFileDelegate = sharedFile;
 		publishedFileDelegate = publishedFile;
@@ -35,7 +35,7 @@ public:
 		if (bIOFailure)
 		{
 			printf(
-				"SharedFile: INTERNAL STEAM ERROR: %d\n",
+				"SharedFile: INTERNAL STEAM ERROR: %i\n",
 				result->m_eResult
 			);
 		}
@@ -56,7 +56,7 @@ public:
 		if (bIOFailure)
 		{
 			printf(
-				"PublishedFile: INTERNAL STEAM ERROR: %d\n",
+				"PublishedFile: INTERNAL STEAM ERROR: %i\n",
 				result->m_eResult
 			);
 		}
@@ -80,7 +80,7 @@ public:
 		if (bIOFailure)
 		{
 			printf(
-				"UpdatedFile: INTERNAL STEAM ERROR: %d\n",
+				"UpdatedFile: INTERNAL STEAM ERROR: %i\n",
 				result->m_eResult
 			);
 		}
@@ -101,7 +101,7 @@ public:
 		if (bIOFailure)
 		{
 			printf(
-				"DeletedFile: INTERNAL STEAM ERROR: %d\n",
+				"DeletedFile: INTERNAL STEAM ERROR: %i\n",
 				result->m_eResult
 			);
 		}
@@ -121,10 +121,10 @@ static SteamCallbackContainer *callbackContainer;
 /* Steam Init/Update/Shutdown */
 
 int STEAM_Initialize(
-	STEAM_OnSharedFile sharedFileDelegate,
-	STEAM_OnPublishedFile publishedFileDelegate,
-	STEAM_OnUpdatedFile updatedFileDelegate,
-	STEAM_OnDeletedFile deletedFileDelegate
+	const STEAM_OnSharedFile sharedFileDelegate,
+	const STEAM_OnPublishedFile publishedFileDelegate,
+	const STEAM_OnUpdatedFile updatedFileDelegate,
+	const STEAM_OnDeletedFile deletedFileDelegate
 ) {
 	if (!SteamAPI_Init())
 	{

@@ -5,22 +5,22 @@
 #include <stdio.h>
 #include <wsPublish/wsPublish.h>
 
-void CMD_OnSharedFile(int success)
+void CMD_OnSharedFile(const int success)
 {
 	// TODO
 }
 
-void CMD_OnPublishedFile(int success, unsigned long fileID)
+void CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
 	// TODO:
 }
 
-void CMD_OnUpdatedFile(int success)
+void CMD_OnUpdatedFile(const int success)
 {
 	// TODO
 }
 
-void CMD_OnDeletedFile(int success)
+void CMD_OnDeletedFile(const int success)
 {
 	// TODO
 }
