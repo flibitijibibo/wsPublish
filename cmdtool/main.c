@@ -45,30 +45,61 @@ static CMD_WorkshopItem_t items[MAX_WORKSHOP_ITEMS];
 static unsigned long itemID[MAX_WORKSHOP_ITEMS];
 
 /* Number of Steam callbacks running, can be used to check current item index */
+static int numOperations;
 static int operationsRunning;
 
 void CMD_OnSharedFile(const int success)
 {
-	/* TODO */
+	printf(
+		"Share Operation #%i: %s\n",
+		numOperations - operationsRunning,
+		success ? "SUCCESS" : "FAILURE"
+	);
 	operationsRunning -= 1;
 }
 
 void CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
-	/* TODO */
-	printf("FILE ID %i: %lu\n", operationsRunning, fileID);
+	FILE *fileOut;
+	char builtPath[MAX_FILENAME_SIZE + 5];
+	int operationNumber = numOperations - operationsRunning;
+
+	printf("Publish Operation #%i: ", operationNumber);
+	if (success)
+	{
+		printf("SUCCESS, FileID: %lu\n", fileID);
+
+		strcpy(builtPath, items[operationNumber].name);
+		strcat(builtPath, ".wsid");
+
+		fileOut = fopen(builtPath, "w");
+		fprintf(fileOut, "%lu", fileID);
+		fclose(fileOut);
+	}
+	else
+	{
+		puts("FAILURE\n");
+	}
 	operationsRunning -= 1;
 }
 
 void CMD_OnUpdatedFile(const int success)
 {
-	/* TODO */
+	printf(
+		"Update Operation #%i: %s\n",
+		numOperations - operationsRunning,
+		success ? "SUCCESS" : "FAILURE"
+	);
 	operationsRunning -= 1;
 }
 
 void CMD_OnDeletedFile(const int success)
 {
-	/* TODO */
+	printf(
+		"Delete Operation #%i: %s\n",
+		numOperations - operationsRunning,
+		success ? "SUCCESS" : "FAILURE"
+	);
 	operationsRunning -= 1;
 }
 
@@ -151,7 +182,8 @@ int main(int argc, char** argv)
 	}
 
 	/* Assign Number of Operations */
-	operationsRunning = argc - 2;
+	numOperations = argc - 2;
+	operationsRunning = numOperations;
 
 	/* Initialize Steamworks */
 
