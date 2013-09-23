@@ -30,8 +30,8 @@
 /* Structure used to store Steam Workshop item information */
 typedef struct CMD_WorkshopItem_s
 {
-	const char *name;
-	const char *previewName;
+	char name[MAX_FILENAME_SIZE + 4];
+	char previewName[MAX_FILENAME_SIZE + 4];
 	const char *title;
 	const char *description;
 	const char **tags;
@@ -152,13 +152,13 @@ int main(int argc, char** argv)
 	#define ITEM argv[i]
 	#define ITEMINDEX (i - 2)
 
-	/* Used to build zipfile name */
-	char builtPath[MAX_FILENAME_SIZE];
-
-	/* Zipfile Variables */
+	/* miniz Handle */
 	mz_zip_archive zip;
-	void *zipData;
-	size_t zipSize = 0;
+
+	/* File I/O Variables */
+	FILE *fileIn;
+	void *fileData;
+	size_t fileSize = 0;
 
 	/* Iterator Variable */
 	int i;
@@ -228,19 +228,19 @@ int main(int argc, char** argv)
 			);
 			mz_zip_writer_finalize_heap_archive(
 				&zip,
-				&zipData,
-				&zipSize
+				&fileData,
+				&fileSize
 			);
 			puts(" Done!\n");
 
-			/* Create the zipfile name */
-			strcpy(builtPath, ITEM);
-			strcat(builtPath, ".zip");
-
 			/* Write to Steam Cloud */
 			printf("Writing %s to the cloud...", ITEM);
-			if (!STEAM_WriteFile(builtPath, zipData, zipSize))
-			{
+			if (	!STEAM_WriteFile(
+					items[ITEMINDEX].name,
+					fileData,
+					fileSize
+				)
+			) {
 				puts(" Cloud write failed! Exiting.\n");
 				mz_zip_writer_end(&zip);
 				goto cleanup;
@@ -248,12 +248,38 @@ int main(int argc, char** argv)
 			mz_zip_writer_end(&zip);
 			puts(" Done!\n");
 
-			/* TODO: Preview PNG File */
+			/* Read the PNG file into memory. Ugh. */
+			fileIn = fopen(items[ITEMINDEX].previewName, "rb");
+			fseek(fileIn, 0, SEEK_END);
+			fileSize = ftell(fileIn);
+			rewind(fileIn);
+			fileData = malloc(sizeof(char) * fileSize);
+			fread(fileData, 1, fileSize, fileIn);
 
-			/* Mark Steam Cloud file as shared */
+			/* Write the PNG file to Steam Cloud */
+			printf("Writing %s preview image to cloud...", ITEM);
+			if (	!STEAM_WriteFile(
+					items[ITEMINDEX].previewName,
+					fileData,
+					fileSize
+				)
+			) {
+				puts(" Cloud write failed! Exiting.\n");
+				free(fileData);
+				goto cleanup;
+			}
+			free(fileData);
+			puts(" Done!\n");
+
+			/* Mark Steam Cloud files as shared */
 			printf("Queueing %s for Steam file share...", ITEM);
-			STEAM_ShareFile(builtPath);
+			STEAM_ShareFile(items[ITEMINDEX].name);
+			STEAM_ShareFile(items[ITEMINDEX].previewName);
 			puts(" Done!\n\n");
+
+			/* Two operations per item */
+			numOperations *= 2;
+			operationsRunning = numOperations;
 		}
 	}
 	else if (CHECK_STRING("publish"))
@@ -262,12 +288,9 @@ int main(int argc, char** argv)
 		puts("Verifying Steam Cloud entries...\n");
 		FOREACH_ITEM
 		{
-			/* Create the zipfile name */
-			strcpy(builtPath, ITEM);
-			strcat(builtPath, ".zip");
-
 			/* Check for the zipfile in Steam Cloud */
-			if (STEAM_FileExists(builtPath))
+			if (	STEAM_FileExists(items[ITEMINDEX].name) &&
+				STEAM_FileExists(items[ITEMINDEX].previewName) )
 			{
 				printf("\t%s is in the cloud.\n", ITEM);
 			}
