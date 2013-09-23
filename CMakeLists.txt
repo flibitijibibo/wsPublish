@@ -21,11 +21,11 @@ ENDIF()
 
 # Compiler Flags
 IF(WSP_DEBUG)
-	SET(CMAKE_C_FLAGS "${ARCHFLAG} -g -Wall -pedantic")
+	SET(CMAKE_C_FLAGS "${ARCHFLAG} -g -Wall")
 	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -g -Wall")
 ELSE()
-	SET(CMAKE_C_FLAGS "${ARCHFLAG} -Wall -pedantic")
-	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -Wall")
+	SET(CMAKE_C_FLAGS "${ARCHFLAG} -O2 -Wall -pedantic")
+	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -O2 -Wall")
 ENDIF()
 
 # Steam SDK Directories
@@ -56,6 +56,7 @@ SET(WSP_SRC
 )
 
 SET(CMD_SRC
+	cmdtool/platform.c
 	cmdtool/main.c
 )
 
@@ -63,4 +64,4 @@ ADD_LIBRARY(wsPublish SHARED ${WSP_SRC})
 TARGET_LINK_LIBRARIES(wsPublish steam_api)
 
 ADD_EXECUTABLE(cmdtool ${CMD_SRC})
-TARGET_LINK_LIBRARIES(cmdtool wsPublish)
+TARGET_LINK_LIBRARIES(cmdtool wsPublish physfs)

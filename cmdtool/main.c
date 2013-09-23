@@ -3,16 +3,25 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wsPublish/wsPublish.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#define sleepms(x) Sleep(x)
-#else
-#include <unistd.h>
-#define sleepms(x) usleep((x) * 1000)
+#include "platform.h"
+
+/* miniz, go home, you're drunk */
+#if !defined(_WIN32)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#pragma GCC diagnostic ignored "-Wlong-long"
 #endif
+
+#include "miniz.c"
+
+#if !defined(_WIN32)
+#pragma GCC diagnostic pop
+#endif
+/* End miniz Alcoholism */
 
 #define MAX_WORKSHOP_ITEMS	16
 #define MAX_FILENAME_SIZE	32
@@ -47,6 +56,7 @@ void CMD_OnSharedFile(const int success)
 void CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
 	/* TODO */
+	printf("FILE ID %i: %lu\n", operationsRunning, fileID);
 	operationsRunning -= 1;
 }
 
@@ -62,6 +72,48 @@ void CMD_OnDeletedFile(const int success)
 	operationsRunning -= 1;
 }
 
+void CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
+{
+	char builtName[(MAX_FILENAME_SIZE * 2) + 1];
+	strcpy(builtName, dir);
+	strcat(builtName, PLATFORM_GetDirectorySeparator());
+	strcat(builtName, file);
+	mz_zip_writer_add_file(
+		data,
+		builtName,
+		builtName,
+		NULL,
+		0,
+		MZ_DEFAULT_COMPRESSION
+	);
+	printf("\tAdded %s to zipfile.\n", builtName);
+}
+
+unsigned long CMD_GetFileID(const char *name)
+{
+	unsigned long returnVal;
+	char builtPath[MAX_FILENAME_SIZE + 5];
+	FILE *fileIn;
+
+	strcpy(builtPath, name);
+	strcat(builtPath, ".wsid");
+
+	fileIn = fopen(builtPath, "r");
+	if (!fileIn)
+	{
+		return 0;
+	}
+
+	returnVal = strtoul(
+		fgets(builtPath, 21, fileIn),
+		NULL,
+		0
+	);
+
+	fclose(fileIn);
+	return returnVal;
+}
+
 int main(int argc, char** argv)
 {
 	#define CHECK_STRING(string) (strcmp(argv[1], string) == 0)
@@ -69,14 +121,13 @@ int main(int argc, char** argv)
 	#define ITEM argv[i]
 	#define ITEMINDEX (i - 2)
 
-	/* Used to obtain zipfile data, push to Steam Cloud */
-	unsigned char *data = NULL;
-
 	/* Used to build zipfile name */
 	char builtPath[MAX_FILENAME_SIZE];
 
-	/* File size of the zipfile */
-	int builtLength = 0;
+	/* Zipfile Variables */
+	mz_zip_archive zip;
+	void *zipData;
+	size_t zipSize = 0;
 
 	/* Iterator Variable */
 	int i;
@@ -139,18 +190,33 @@ int main(int argc, char** argv)
 			strcat(builtPath, ".zip");
 
 			/* Create the zipfile */
-			printf("Creating zip file of %s...", ITEM);
-			/* TODO: ZIP FOLDER */
+			printf("Zipping %s folder to heap...", ITEM);
+			mz_zip_writer_init_heap(&zip, 0, 0);
+			PLATFORM_EnumerateFiles(
+				argv[0],
+				ITEM,
+				&zip,
+				CMD_OnFileEnumerated
+			);
+			mz_zip_writer_finalize_heap_archive(
+				&zip,
+				&zipData,
+				&zipSize
+			);
 			puts(" Done!\n");
 
 			/* Write to Steam Cloud */
 			printf("Writing %s to the cloud...", ITEM);
-			if (!STEAM_WriteFile(builtPath, data, builtLength))
+			if (!STEAM_WriteFile(builtPath, zipData, zipSize))
 			{
 				puts(" Cloud write failed! Exiting.\n");
+				mz_zip_writer_end(&zip);
 				goto cleanup;
 			}
+			mz_zip_writer_end(&zip);
 			puts(" Done!\n");
+
+			/* TODO: Preview PNG File */
 
 			/* Mark Steam Cloud file as shared */
 			printf("Queueing %s for Steam file share...", ITEM);
@@ -210,7 +276,15 @@ int main(int argc, char** argv)
 		FOREACH_ITEM
 		{
 			printf("Verifying Workshop ID for %s...", ITEM);
-			/* TODO: Get fileID */
+			itemID[ITEMINDEX] = CMD_GetFileID(ITEM);
+			if (itemID[ITEMINDEX] == 0)
+			{
+				printf(
+					"%s has no Workshop ID! Exiting.\n",
+					ITEM
+				);
+				goto cleanup;
+			}
 			puts(" Done!\n");
 		}
 		puts("Verification complete! Beginning update process.\n\n");
@@ -240,7 +314,15 @@ int main(int argc, char** argv)
 		FOREACH_ITEM
 		{
 			printf("Verifying Workshop ID for %s...", ITEM);
-			/* TODO: Get fileID */
+			itemID[ITEMINDEX] = CMD_GetFileID(ITEM);
+			if (itemID[ITEMINDEX] == 0)
+			{
+				printf(
+					"%s has no Workshop ID! Exiting.\n",
+					ITEM
+				);
+				goto cleanup;
+			}
 			puts(" Done!\n");
 		}
 		puts("Verification complete! Beginning delete process.\n");
@@ -265,7 +347,7 @@ int main(int argc, char** argv)
 	while (operationsRunning > 0)
 	{
 		puts(".");
-		sleepms(UPDATE_TIME_MS);
+		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
 	puts("\nOperation Completed!\n");
 
