@@ -217,10 +217,6 @@ int main(int argc, char** argv)
 	{
 		FOREACH_ITEM
 		{
-			/* Create the zipfile name */
-			strcpy(builtPath, ITEM);
-			strcat(builtPath, ".zip");
-
 			/* Create the zipfile */
 			printf("Zipping %s folder to heap...", ITEM);
 			mz_zip_writer_init_heap(&zip, 0, 0);
@@ -236,6 +232,10 @@ int main(int argc, char** argv)
 				&zipSize
 			);
 			puts(" Done!\n");
+
+			/* Create the zipfile name */
+			strcpy(builtPath, ITEM);
+			strcat(builtPath, ".zip");
 
 			/* Write to Steam Cloud */
 			printf("Writing %s to the cloud...", ITEM);
