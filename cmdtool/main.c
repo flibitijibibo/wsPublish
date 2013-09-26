@@ -80,7 +80,7 @@ void CMD_OnPublishedFile(const int success, const unsigned long fileID)
 	}
 	else
 	{
-		puts("FAILURE\n");
+		printf("FAILURE\n");
 	}
 	operationsRunning -= 1;
 }
@@ -195,7 +195,7 @@ int main(int argc, char** argv)
 
 	/* Initialize Steamworks */
 
-	puts("Initializing Steam...\n");
+	printf("Initializing Steam...\n");
 	if (	!STEAM_Initialize(
 			CMD_OnSharedFile,
 			CMD_OnPublishedFile,
@@ -203,14 +203,14 @@ int main(int argc, char** argv)
 			CMD_OnDeletedFile
 		)
 	) {
-		puts("Steam failed to initialize!\n");
+		printf("Steam failed to initialize!\n");
 		return 0;
 	}
-	puts("Steam initialized!\n\n");
+	printf("Steam initialized!\n\n");
 
 	/* Verify Workshop Item Ccripts */
 
-	puts("Verifying Workshop item JSON scripts...\n");
+	printf("Verifying Workshop item JSON scripts...\n");
 	FOREACH_ITEM
 	{
 		printf("Reading %s.json...", ITEM);
@@ -313,8 +313,8 @@ int main(int argc, char** argv)
 		{
 			PARSE_ERROR("Visibility is not a string")
 		}
-		if (	strcmp(parser->u.object.values[3].value->u.string.ptr, "Public") != 0 ||
-			strcmp(parser->u.object.values[3].value->u.string.ptr, "Friends") != 0 ||
+		if (	strcmp(parser->u.object.values[3].value->u.string.ptr, "Public") != 0 &&
+			strcmp(parser->u.object.values[3].value->u.string.ptr, "Friends") != 0 &&
 			strcmp(parser->u.object.values[3].value->u.string.ptr, "Private") != 0	)
 		{
 			PARSE_ERROR("Visibility: Expected Public/Friends/Private")
@@ -362,9 +362,9 @@ int main(int argc, char** argv)
 		/* Clean up. NEXT. */
 		json_value_free(parser);
 
-		puts("Done!\n");
+		printf("Done!\n");
 	}
-	puts("Verification complete! Beginning Workshop operation.\n\n");
+	printf("Verification complete! Beginning Workshop operation.\n\n");
 
 	/* Command Line Operations */
 
@@ -373,20 +373,30 @@ int main(int argc, char** argv)
 		FOREACH_ITEM
 		{
 			/* Create the zipfile */
-			printf("Zipping %s folder to heap...", ITEM);
-			mz_zip_writer_init_heap(&zip, 0, 0);
+			printf("Zipping %s folder to heap...\n", ITEM);
+			memset(&zip, 0, sizeof(zip));
+			if (!mz_zip_writer_init_heap(&zip, 0, 0))
+			{
+				printf("Could not open up zip! Exiting.\n");
+				goto cleanup;
+			}
 			PLATFORM_EnumerateFiles(
 				argv[0],
 				ITEM,
 				&zip,
 				CMD_OnFileEnumerated
 			);
-			mz_zip_writer_finalize_heap_archive(
-				&zip,
-				&fileData,
-				&fileSize
-			);
-			puts(" Done!\n");
+			if (	!mz_zip_writer_finalize_heap_archive(
+					&zip,
+					&fileData,
+					&fileSize
+				)
+			) {
+				printf("Zipping went wrong! Exiting\n");
+				mz_zip_writer_end(&zip);
+				goto cleanup;
+			}
+			printf("Zipping Completed!\n");
 
 			/* Write to Steam Cloud */
 			printf("Writing %s to the cloud...", ITEM);
@@ -396,12 +406,12 @@ int main(int argc, char** argv)
 					fileSize
 				)
 			) {
-				puts(" Cloud write failed! Exiting.\n");
+				printf(" Cloud write failed! Exiting.\n");
 				mz_zip_writer_end(&zip);
 				goto cleanup;
 			}
 			mz_zip_writer_end(&zip);
-			puts(" Done!\n");
+			printf(" Done!\n");
 
 			/* Read the PNG file into memory. Ugh. */
 			fileIn = fopen(items[ITEMINDEX].previewName, "rb");
@@ -419,18 +429,18 @@ int main(int argc, char** argv)
 					fileSize
 				)
 			) {
-				puts(" Cloud write failed! Exiting.\n");
+				printf(" Cloud write failed! Exiting.\n");
 				free(fileData);
 				goto cleanup;
 			}
 			free(fileData);
-			puts(" Done!\n");
+			printf(" Done!\n");
 
 			/* Mark Steam Cloud files as shared */
 			printf("Queueing %s for Steam file share...", ITEM);
 			STEAM_ShareFile(items[ITEMINDEX].name);
 			STEAM_ShareFile(items[ITEMINDEX].previewName);
-			puts(" Done!\n\n");
+			printf(" Done!\n\n");
 
 			/* Two operations per item */
 			numOperations *= 2;
@@ -440,7 +450,7 @@ int main(int argc, char** argv)
 	else if (CHECK_STRING("publish"))
 	{
 		/* Ensure all files are on Steam Cloud */
-		puts("Verifying Steam Cloud entries...\n");
+		printf("Verifying Steam Cloud entries...\n");
 		FOREACH_ITEM
 		{
 			/* Check for the zipfile in Steam Cloud */
@@ -458,7 +468,7 @@ int main(int argc, char** argv)
 				goto cleanup;
 			}
 		}
-		puts("Verification complete! Beginning publish process.\n\n");
+		printf("Verification complete! Beginning publish process.\n\n");
 
 		/* Publish all files on Steam Workshop */
 		FOREACH_ITEM
@@ -475,14 +485,14 @@ int main(int argc, char** argv)
 				items[ITEMINDEX].visibility,
 				items[ITEMINDEX].type
 			);
-			puts(" Done!\n");
+			printf(" Done!\n");
 		}
-		puts("\n");
+		printf("\n");
 	}
 	else if (CHECK_STRING("update"))
 	{
 		/* Be sure all files are on Steam Workshop */
-		puts("Verifying Workshop entries...\n");
+		printf("Verifying Workshop entries...\n");
 		FOREACH_ITEM
 		{
 			printf("Verifying Workshop ID for %s...", ITEM);
@@ -495,9 +505,9 @@ int main(int argc, char** argv)
 				);
 				goto cleanup;
 			}
-			puts(" Done!\n");
+			printf(" Done!\n");
 		}
-		puts("Verification complete! Beginning update process.\n\n");
+		printf("Verification complete! Beginning update process.\n\n");
 
 		/* Queue each Steam Workshop update */
 		FOREACH_ITEM
@@ -513,14 +523,14 @@ int main(int argc, char** argv)
 				items[ITEMINDEX].numTags,
 				items[ITEMINDEX].visibility
 			);
-			puts(" Done!\n");
+			printf(" Done!\n");
 		}
-		puts("\n");
+		printf("\n");
 	}
 	else if (CHECK_STRING("delete"))
 	{
 		/* Be sure all files are on Steam Workshop */
-		puts("Verifying Workshop entries...\n");
+		printf("Verifying Workshop entries...\n");
 		FOREACH_ITEM
 		{
 			printf("Verifying Workshop ID for %s...", ITEM);
@@ -533,33 +543,33 @@ int main(int argc, char** argv)
 				);
 				goto cleanup;
 			}
-			puts(" Done!\n");
+			printf(" Done!\n");
 		}
-		puts("Verification complete! Beginning delete process.\n");
+		printf("Verification complete! Beginning delete process.\n");
 
 		/* Queue each Steam Workshop deletion */
 		FOREACH_ITEM
 		{
 			printf("Queueing %s for Workshop removal...", ITEM);
 			STEAM_DeletePublishedFile(itemID[ITEMINDEX]);
-			puts("Done!\n");
+			printf("Done!\n");
 		}
-		puts("\n");
+		printf("\n");
 	}
 
 	/* Steam Asynchronous Calls */
 
-	puts("Running Steam callbacks...\n");
+	printf("Running Steam callbacks...");
 	STEAM_Update();
-
+	printf(" Done! Waiting...\n");
 	/* Wait for all operations to complete. */
 
 	while (operationsRunning > 0)
 	{
-		puts(".");
+		printf(".");
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
-	puts("\nOperation Completed!\n");
+	printf("\nOperation Completed!\n");
 
 	/* Clean up. We out. */
 cleanup:
