@@ -367,7 +367,6 @@ int main(int argc, char** argv)
 			goto cleanup;
 		}
 		PLATFORM_EnumerateFiles(
-			argv[0],
 			argv[2],
 			&zip,
 			CMD_OnFileEnumerated

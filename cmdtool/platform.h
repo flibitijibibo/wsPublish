@@ -18,7 +18,6 @@ typedef void (DELEGATECALL *PLATFORM_PrintFile)(
 );
 
 void PLATFORM_EnumerateFiles(
-	const char *argv0,
 	const char *directory,
 	void *data,
 	PLATFORM_PrintFile callback

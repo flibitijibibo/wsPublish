@@ -17,7 +17,6 @@
 #endif
 
 void PLATFORM_EnumerateFiles(
-	const char *argv0,
 	const char *directory,
 	void *data,
 	PLATFORM_PrintFile callback
@@ -43,6 +42,8 @@ void PLATFORM_EnumerateFiles(
 		}
 		callback(data, directory, de->d_name);
 	}
+#else
+#error Need a PLATFORM_EnumerateFiles implementation!
 #endif
 }
 
