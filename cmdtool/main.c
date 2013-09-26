@@ -189,6 +189,14 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
+	/* A nice header message */
+	printf(	"\n"
+		"/***********************************************************\n"
+		"*               wsPublish Command Line Tool                *\n"
+		"***********************************************************/\n"
+		"\n"
+	);
+
 	/* Initialize Steamworks */
 
 	printf("Initializing Steam...\n");
@@ -356,7 +364,7 @@ int main(int argc, char** argv)
 	/* Clean up. */
 	json_value_free(parser);
 
-	printf("Done!\n");
+	printf(" Done!\n");
 	printf("Verification complete! Beginning Workshop operation.\n\n");
 
 	/* Command Line Operations */
@@ -524,11 +532,11 @@ int main(int argc, char** argv)
 
 	/* Steam Asynchronous Calls */
 
-	printf("Running Steam callbacks...");
+	printf("Running Steam callbacks...\n");
 	while (operationRunning > 0)
 	{
-		STEAM_Update();
 		puts("...");
+		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
 	printf("\nOperation Completed!\n");
