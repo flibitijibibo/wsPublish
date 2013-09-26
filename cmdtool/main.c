@@ -34,9 +34,9 @@ typedef struct CMD_WorkshopItem_s
 {
 	char name[MAX_FILENAME_SIZE + 4];
 	char previewName[MAX_FILENAME_SIZE + 4];
-	const char *title;
-	const char *description;
-	const char **tags;
+	char title[64]; /* FIXME: This character limit is arbitrary! */
+	char description[8000]; /* Max, according to TF2 wiki */
+	char **tags; /* FIXME: Not using malloc here would be super rad. */
 	int numTags;
 	STEAM_EFileVisibility visibility;
 	STEAM_EFileType type;
@@ -158,8 +158,7 @@ int main(int argc, char** argv)
 	char jsonName[MAX_FILENAME_SIZE + 5];
 
 	/* JSON Handles */
-	json_value *initial;
-	json_value *current;
+	json_value *parser;
 
 	/* miniz Handle */
 	mz_zip_archive zip;
@@ -237,8 +236,7 @@ int main(int argc, char** argv)
 		fclose(fileIn);
 
 		/* Send the JSON string to the parser. */
-		initial = json_parse(fileData, fileSize);
-		current = initial;
+		parser = json_parse(fileData, fileSize);
 
 		/* We're done with the data at this point. */
 		free(fileData);
@@ -253,53 +251,116 @@ int main(int argc, char** argv)
 		/* Verify the JSON script. */
 		#define PARSE_ERROR(output) \
 			printf(" ERROR: %s! Exiting.\n", output); \
-			json_value_free(initial); \
+			json_value_free(parser); \
 			goto cleanup;
-		if (current->type != json_object)
+		if (parser->type != json_object)
 		{
 			PARSE_ERROR("Expected Item JSON Object")
 		}
-		if (current->u.object.length != 3)
+		if (parser->u.object.length != 4)
 		{
-			PARSE_ERROR("Expected only 3 values")
+			PARSE_ERROR("Expected only 4 values")
 		}
-		if (	!strcmp(current->u.object.values[0].name, "Title") ||
-			!strcmp(current->u.object.values[1].name, "Description") ||
-			!strcmp(current->u.object.values[2].name, "Tags")	)
+		if (	strcmp(parser->u.object.values[0].name, "Title") != 0 ||
+			strcmp(parser->u.object.values[1].name, "Description") != 0 ||
+			strcmp(parser->u.object.values[2].name, "Tags") != 0 ||
+			strcmp(parser->u.object.values[3].name, "Visibility") != 0	)
 		{
-			PARSE_ERROR("Expected Title, Description, Tags")
+			PARSE_ERROR("Expected Title, Description, Tags, Visibility")
 		}
-		if (current->u.object.values[0].value->type != json_string)
+		if (parser->u.object.values[0].value->type != json_string)
 		{
 			PARSE_ERROR("Title is not a string")
 		}
-		if (current->u.object.values[1].value->type != json_string)
+		if (parser->u.object.values[0].value->u.string.length > 64)
+		{
+			PARSE_ERROR("Title is longer than 64 characters")
+		}
+		if (parser->u.object.values[1].value->type != json_string)
 		{
 			PARSE_ERROR("Description is not a string")
 		}
-		if (current->u.object.values[2].value->type != json_array)
+		if (parser->u.object.values[1].value->u.string.length > 8000)
+		{
+			PARSE_ERROR("Description is longer than 8000 characters")
+		}
+		if (parser->u.object.values[2].value->type != json_array)
 		{
 			PARSE_ERROR("Tags is not an array")
 		}
-		if (current->u.object.values[2].value->u.array.length < 1)
+		if (parser->u.object.values[2].value->u.array.length < 1)
 		{
 			PARSE_ERROR("Tags is an empty array")
 		}
+		if (parser->u.object.values[2].value->u.array.length > 32)
+		{
+			PARSE_ERROR("Tags has more than 32 elements")
+		}
 		for (	j = 0;
-			j < current->u.object.values[2].value->u.array.length;
+			j < parser->u.object.values[2].value->u.array.length;
 			j += 1
 		) {
-			if (current->u.object.values[2].value->u.array.values[j]->type != json_string)
+			if (parser->u.object.values[2].value->u.array.values[j]->type != json_string)
 			{
 				PARSE_ERROR("Tag element is not a string")
 			}
+			if (parser->u.object.values[2].value->u.array.values[j]->u.string.length > 32)
+			{
+				PARSE_ERROR("Tag element is longer than 32 characters")
+			}
+		}
+		if (parser->u.object.values[3].value->type != json_string)
+		{
+			PARSE_ERROR("Visibility is not a string")
+		}
+		if (	strcmp(parser->u.object.values[3].value->u.string.ptr, "Public") != 0 ||
+			strcmp(parser->u.object.values[3].value->u.string.ptr, "Friends") != 0 ||
+			strcmp(parser->u.object.values[3].value->u.string.ptr, "Private") != 0	)
+		{
+			PARSE_ERROR("Visibility: Expected Public/Friends/Private")
 		}
 		#undef PARSE_ERROR
 
-		/* TODO Interpret the JSON script */
+		/* Interpret the JSON script */
+		strcpy(
+			items[ITEMINDEX].title,
+			parser->u.object.values[0].value->u.string.ptr
+		);
+		strcpy(
+			items[ITEMINDEX].description,
+			parser->u.object.values[1].value->u.string.ptr
+		);
+		/* FIXME: malloc, ugh. */
+		items[ITEMINDEX].tags = (char**) malloc(
+			sizeof(char*) *
+			 parser->u.object.values[2].value->u.array.length
+		);
+		for (	j = 0;
+			j < parser->u.object.values[2].value->u.array.length;
+			j += 1
+		) {
+			items[ITEMINDEX].tags[j] = (char*) malloc(sizeof(char) * 33);
+			strcpy(
+				items[ITEMINDEX].tags[j],
+				parser->u.object.values[2].value->u.array.values[j]->u.string.ptr
+			);
+		}
+		items[ITEMINDEX].numTags = j;
+		if (strcmp(parser->u.object.values[3].value->u.string.ptr, "Public") == 0)
+		{
+			items[ITEMINDEX].visibility = STEAM_EFileVisibility_PUBLIC;
+		}
+		if (strcmp(parser->u.object.values[3].value->u.string.ptr, "Friends") == 0)
+		{
+			items[ITEMINDEX].visibility = STEAM_EFileVisibility_FRIENDSONLY;
+		}
+		if (strcmp(parser->u.object.values[3].value->u.string.ptr, "Private") == 0)
+		{
+			items[ITEMINDEX].visibility = STEAM_EFileVisibility_PRIVATE;
+		}
 
 		/* Clean up. NEXT. */
-		json_value_free(initial);
+		json_value_free(parser);
 
 		puts("Done!\n");
 	}
@@ -502,6 +563,17 @@ int main(int argc, char** argv)
 
 	/* Clean up. We out. */
 cleanup:
+	FOREACH_ITEM
+	{
+		if (!items[ITEMINDEX].tags)
+		{
+			for (j = 0; j < items[ITEMINDEX].numTags; j += 1)
+			{
+				free(items[ITEMINDEX].tags[j]);
+			}
+			free(items[ITEMINDEX].tags);
+		}
+	}
 	STEAM_Shutdown();
 	return 0;
 
