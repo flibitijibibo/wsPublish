@@ -293,10 +293,6 @@ int main(int argc, char** argv)
 	{
 		PARSE_ERROR("Type is not a string")
 	}
-	if (parser->u.object.values[2].value->u.string.length > 16)
-	{
-		PARSE_ERROR("Type is longer than 16 characters")
-	}
 	if (parser->u.object.values[3].value->type != json_array)
 	{
 		PARSE_ERROR("Category is not an array")
@@ -316,10 +312,6 @@ int main(int argc, char** argv)
 		if (parser->u.object.values[3].value->u.array.values[i]->type != json_string)
 		{
 			PARSE_ERROR("Category element is not a string")
-		}
-		if (parser->u.object.values[3].value->u.array.values[i]->u.string.length > 16)
-		{
-			PARSE_ERROR("Category element is longer than 16 characters")
 		}
 	}
 
