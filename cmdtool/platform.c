@@ -4,6 +4,11 @@
 
 #include "platform.h"
 
+/* Shut your face, Windows */
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -22,7 +27,29 @@ void PLATFORM_EnumerateFiles(
 	PLATFORM_PrintFile callback
 ) {
 #if defined(_WIN32)
-#error TODO: Win32 directory listing!
+	WIN32_FIND_DATA findHandle;
+	HANDLE hFind = NULL;
+	char fileSearch[MAX_PATH];
+
+	sprintf(fileSearch, "%s\\*.*", directory);
+	hFind = FindFirstFile(fileSearch, &findHandle);
+	if (hFind == INVALID_HANDLE_VALUE)
+	{
+		printf("Could not find directory %s\n", directory);
+		return;
+	}
+	do
+	{
+		if (	strcmp(findHandle.cFileName, "..") != 0 &&
+				strcmp(findHandle.cFileName, ".") != 0	)
+		{
+			sprintf(fileSearch, "%s\\%s", directory, findHandle.cFileName);
+			if ((findHandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+			{
+				callback(data, directory, findHandle.cFileName);
+			}
+		}
+	} while (FindNextFile(hFind, &findHandle));
 #elif defined(__linux__) || defined(__APPLE__)
 	DIR *dir = NULL;
 	struct dirent *de = NULL;
@@ -44,17 +71,6 @@ void PLATFORM_EnumerateFiles(
 	}
 #else
 #error Need a PLATFORM_EnumerateFiles implementation!
-#endif
-}
-
-const char *PLATFORM_GetDirectorySeparator()
-{
-#if defined(_WIN32)
-	return "\\";
-#elif defined(__linux__) || defined(__APPLE__)
-	return "/";
-#else
-#error Need a PLATFORM_GetDirectorySeparator implementation!
 #endif
 }
 

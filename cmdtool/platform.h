@@ -23,8 +23,6 @@ void PLATFORM_EnumerateFiles(
 	PLATFORM_PrintFile callback
 );
 
-const char *PLATFORM_GetDirectorySeparator();
-
 void PLATFORM_Sleep(int ms);
 
 #undef DELEGATECALL

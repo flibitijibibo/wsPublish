@@ -54,12 +54,18 @@ static char *itemName;
 /* Is the callback running? */
 static int operationRunning = 1;
 
-void CMD_OnSharedFile(const int success)
+#ifdef _WIN32
+#define DELEGATECALL __stdcall
+#else
+#define DELEGATECALL
+#endif
+
+void DELEGATECALL CMD_OnSharedFile(const int success)
 {
 	operationRunning = 0;
 }
 
-void CMD_OnPublishedFile(const int success, const unsigned long fileID)
+void DELEGATECALL CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
 	FILE *fileOut;
 	char builtPath[MAX_FILENAME_SIZE + 5];
@@ -81,12 +87,12 @@ void CMD_OnPublishedFile(const int success, const unsigned long fileID)
 	operationRunning = 0;
 }
 
-void CMD_OnUpdatedFile(const int success)
+void DELEGATECALL CMD_OnUpdatedFile(const int success)
 {
 	operationRunning = 0;
 }
 
-void CMD_OnDeletedFile(const int success)
+void DELEGATECALL CMD_OnDeletedFile(const int success)
 {
 	char builtPath[MAX_FILENAME_SIZE + 5];
 	if (success)
@@ -105,11 +111,11 @@ void CMD_OnDeletedFile(const int success)
 	operationRunning = 0;
 }
 
-void CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
+void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
 {
 	char builtName[(MAX_FILENAME_SIZE * 2) + 1 + 4];
 	strcpy(builtName, dir);
-	strcat(builtName, PLATFORM_GetDirectorySeparator());
+	strcat(builtName, "/");
 	strcat(builtName, file);
 	mz_zip_writer_add_file(
 		data,
