@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 	size_t fileSize = 0;
 
 	/* Iterator Variable */
-	int i;
+	int i, j;
 
 	/* Verify Command Line Arguments */
 
@@ -250,29 +250,53 @@ int main(int argc, char** argv)
 		strcat(items[ITEMINDEX].previewName, ".png");
 		items[ITEMINDEX].type = STEAM_EFileType_COMMUNITY;
 
-		/* TODO: Interpret the JSON values. */
-		if (current->type == json_none)
-		{
-			/* TODO: ??? */
-		}
-		else if (current->type == json_object)
-		{
-			/* TODO: ??? */
-		}
-		else if (current->type == json_array)
-		{
-			/* TODO: Tags */
-		}
-		else if (current->type == json_string)
-		{
-			/* TODO: Title, Description, Visibility */
-		}
-		else
-		{
-			printf(" ERROR: Unexpected type in script. Exiting.\n");
-			json_value_free(initial);
+		/* Verify the JSON script. */
+		#define PARSE_ERROR(output) \
+			printf(" ERROR: %s! Exiting.\n", output); \
+			json_value_free(initial); \
 			goto cleanup;
+		if (current->type != json_object)
+		{
+			PARSE_ERROR("Expected Item JSON Object")
 		}
+		if (current->u.object.length != 3)
+		{
+			PARSE_ERROR("Expected only 3 values")
+		}
+		if (	!strcmp(current->u.object.values[0].name, "Title") ||
+			!strcmp(current->u.object.values[1].name, "Description") ||
+			!strcmp(current->u.object.values[2].name, "Tags")	)
+		{
+			PARSE_ERROR("Expected Title, Description, Tags")
+		}
+		if (current->u.object.values[0].value->type != json_string)
+		{
+			PARSE_ERROR("Title is not a string")
+		}
+		if (current->u.object.values[1].value->type != json_string)
+		{
+			PARSE_ERROR("Description is not a string")
+		}
+		if (current->u.object.values[2].value->type != json_array)
+		{
+			PARSE_ERROR("Tags is not an array")
+		}
+		if (current->u.object.values[2].value->u.array.length < 1)
+		{
+			PARSE_ERROR("Tags is an empty array")
+		}
+		for (	j = 0;
+			j < current->u.object.values[2].value->u.array.length;
+			j += 1
+		) {
+			if (current->u.object.values[2].value->u.array.values[j]->type != json_string)
+			{
+				PARSE_ERROR("Tag element is not a string")
+			}
+		}
+		#undef PARSE_ERROR
+
+		/* TODO Interpret the JSON script */
 
 		/* Clean up. NEXT. */
 		json_value_free(initial);
