@@ -56,6 +56,7 @@ SET(WSP_SRC
 )
 
 SET(CMD_SRC
+	cmdtool/json.c
 	cmdtool/platform.c
 	cmdtool/main.c
 )
@@ -64,4 +65,4 @@ ADD_LIBRARY(wsPublish SHARED ${WSP_SRC})
 TARGET_LINK_LIBRARIES(wsPublish steam_api)
 
 ADD_EXECUTABLE(cmdtool ${CMD_SRC})
-TARGET_LINK_LIBRARIES(cmdtool wsPublish physfs)
+TARGET_LINK_LIBRARIES(cmdtool wsPublish m physfs)

@@ -9,6 +9,8 @@
 
 #include "platform.h"
 
+#include "json.h"
+
 /* miniz, go home, you're drunk */
 #if !defined(_WIN32)
 #pragma GCC diagnostic push
@@ -152,6 +154,13 @@ int main(int argc, char** argv)
 	#define ITEM argv[i]
 	#define ITEMINDEX (i - 2)
 
+	/* JSON Filename */
+	char jsonName[MAX_FILENAME_SIZE + 5];
+
+	/* JSON Handles */
+	json_value *initial;
+	json_value *current;
+
 	/* miniz Handle */
 	mz_zip_archive zip;
 
@@ -206,7 +215,39 @@ int main(int argc, char** argv)
 	FOREACH_ITEM
 	{
 		printf("Reading %s.json...", ITEM);
-		/* TODO: JSON CHECK */
+
+		/* Open file */
+		strcpy(jsonName, ITEM);
+		strcat(jsonName, ".json");
+		fileIn = fopen(jsonName, "r");
+		if (!fileIn)
+		{
+			printf("%s was not found! Exiting.\n", jsonName);
+			goto cleanup;
+		}
+
+		/* Read the JSON file into memory. Ugh. */
+		fseek(fileIn, 0, SEEK_END);
+		fileSize = ftell(fileIn);
+		rewind(fileIn);
+		fileData = malloc(sizeof(char) * fileSize);
+		fread(fileData, 1, fileSize, fileIn);
+
+		/* We're done with the file at this point. */
+		fclose(fileIn);
+
+		/* Send the JSON string to the parser. */
+		initial = json_parse(fileData, fileSize);
+		current = initial;
+
+		/* We're done with the data at this point. */
+		free(fileData);
+
+		/* TODO: Interpret the JSON values. */
+
+		/* Clean up. NEXT. */
+		json_value_free(initial);
+
 		puts("Done!\n");
 	}
 	puts("Verification complete! Beginning Workshop operation.\n\n");
