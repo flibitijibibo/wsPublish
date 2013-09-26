@@ -176,11 +176,11 @@ int main(int argc, char** argv)
 
 	/* Verify Command Line Arguments */
 
-	if (	argc < 3 ||
-		argc > 3 ||
-		!(	CHECK_STRING("upload")  ||
+	if (	/* TODO: !(argc == 2 && CHECK_STRING("list")) && */
+		!(argc == 3 &&
+		(	CHECK_STRING("upload")  ||
 			CHECK_STRING("update")  ||
-			CHECK_STRING("delete")	)	)
+			CHECK_STRING("delete")	)	)	)
 	{
 		printf(
 			"Usage: %s ACTION FOLDER\n"
