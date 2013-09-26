@@ -107,7 +107,7 @@ void CMD_OnDeletedFile(const int success)
 
 void CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
 {
-	char builtName[(MAX_FILENAME_SIZE * 2) + 1];
+	char builtName[(MAX_FILENAME_SIZE * 2) + 1 + 4];
 	strcpy(builtName, dir);
 	strcat(builtName, PLATFORM_GetDirectorySeparator());
 	strcat(builtName, file);
@@ -222,7 +222,7 @@ int main(int argc, char** argv)
 		fileIn = fopen(jsonName, "r");
 		if (!fileIn)
 		{
-			printf("%s was not found! Exiting.\n", jsonName);
+			printf(" %s was not found! Exiting.\n", jsonName);
 			goto cleanup;
 		}
 
@@ -243,7 +243,36 @@ int main(int argc, char** argv)
 		/* We're done with the data at this point. */
 		free(fileData);
 
+		/* Begin filling in the Workshop Item struct. */
+		strcpy(items[ITEMINDEX].name, ITEM);
+		strcat(items[ITEMINDEX].name, ".zip");
+		strcpy(items[ITEMINDEX].previewName, ITEM);
+		strcat(items[ITEMINDEX].previewName, ".png");
+		items[ITEMINDEX].type = STEAM_EFileType_COMMUNITY;
+
 		/* TODO: Interpret the JSON values. */
+		if (current->type == json_none)
+		{
+			/* TODO: ??? */
+		}
+		else if (current->type == json_object)
+		{
+			/* TODO: ??? */
+		}
+		else if (current->type == json_array)
+		{
+			/* TODO: Tags */
+		}
+		else if (current->type == json_string)
+		{
+			/* TODO: Title, Description, Visibility */
+		}
+		else
+		{
+			printf(" ERROR: Unexpected type in script. Exiting.\n");
+			json_value_free(initial);
+			goto cleanup;
+		}
 
 		/* Clean up. NEXT. */
 		json_value_free(initial);
