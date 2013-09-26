@@ -2,6 +2,11 @@
  * Written by Ethan "flibitijibibo" Lee
  */
 
+/* Shut your face, Windows */
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -185,10 +190,10 @@ int main(int argc, char** argv)
 
 	printf("Initializing Steam...\n");
 	if (	!STEAM_Initialize(
-			CMD_OnSharedFile,
-			CMD_OnPublishedFile,
-			CMD_OnUpdatedFile,
-			CMD_OnDeletedFile
+			(STEAM_OnSharedFile) CMD_OnSharedFile,
+			(STEAM_OnPublishedFile) CMD_OnPublishedFile,
+			(STEAM_OnUpdatedFile) CMD_OnUpdatedFile,
+			(STEAM_OnDeletedFile) CMD_OnDeletedFile
 		)
 	) {
 		printf("Steam failed to initialize!\n");
@@ -369,7 +374,7 @@ int main(int argc, char** argv)
 		PLATFORM_EnumerateFiles(
 			argv[2],
 			&zip,
-			CMD_OnFileEnumerated
+			(PLATFORM_PrintFile) CMD_OnFileEnumerated
 		);
 		if (	!mz_zip_writer_finalize_heap_archive(
 				&zip,
