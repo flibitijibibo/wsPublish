@@ -356,13 +356,13 @@ int main(int argc, char** argv)
 		{
 			categories[1] = 1;
 		}
-		else if (COMPARE_TAG("Multiplayer"))
+		else if (COMPARE_TAG("Deathmatch"))
 		{
 			categories[2] = 1;
 		}
 		else
 		{
-			PARSE_ERROR("Category: Expected Singleplayer, Coop, Multiplayer")
+			PARSE_ERROR("Category: Expected Singleplayer, Coop, Deathmatch")
 		}
 		#undef COMPARE_TAG
 	}
@@ -383,7 +383,7 @@ int main(int argc, char** argv)
 	}
 	if (categories[2])
 	{
-		item.tags[item.numTags] = "Multiplayer";
+		item.tags[item.numTags] = "Deathmatch";
 		item.numTags += 1;
 	}
 
