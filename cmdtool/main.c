@@ -479,7 +479,7 @@ int main(int argc, char** argv)
 		if (itemID == 0)
 		{
 			printf(
-				"%s has no Workshop ID! Exiting.\n",
+				" %s has no Workshop ID! Exiting.\n",
 				argv[2]
 			);
 			goto cleanup;
