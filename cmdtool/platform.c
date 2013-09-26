@@ -41,7 +41,7 @@ void PLATFORM_EnumerateFiles(
 	do
 	{
 		if (	strcmp(findHandle.cFileName, "..") != 0 &&
-				strcmp(findHandle.cFileName, ".") != 0	)
+			strcmp(findHandle.cFileName, ".") != 0	)
 		{
 			sprintf(fileSearch, "%s\\%s", directory, findHandle.cFileName);
 			if ((findHandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)

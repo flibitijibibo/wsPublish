@@ -73,8 +73,7 @@ void DELEGATECALL CMD_OnPublishedFile(const int success, const unsigned long fil
 	{
 		printf("FileID: %lu\n", fileID);
 
-		strcpy(builtPath, itemName);
-		strcat(builtPath, ".wsid");
+		sprintf(builtPath, "%s.wsid", itemName);
 
 		fileOut = fopen(builtPath, "w");
 		fprintf(fileOut, "%lu", fileID);
@@ -97,8 +96,7 @@ void DELEGATECALL CMD_OnDeletedFile(const int success)
 	char builtPath[MAX_FILENAME_SIZE + 5];
 	if (success)
 	{
-		strcpy(builtPath, itemName);
-		strcat(builtPath, ".wsid");
+		sprintf(builtPath, "%s.wsid", itemName);
 
 		remove(builtPath);
 
@@ -114,9 +112,9 @@ void DELEGATECALL CMD_OnDeletedFile(const int success)
 void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
 {
 	char builtName[(MAX_FILENAME_SIZE * 2) + 1 + 4];
-	strcpy(builtName, dir);
-	strcat(builtName, "/");
-	strcat(builtName, file);
+
+	sprintf(builtName, "%s/%s", dir, file);
+
 	mz_zip_writer_add_file(
 		data,
 		builtName,
@@ -134,8 +132,7 @@ unsigned long CMD_GetFileID(const char *name)
 	char builtPath[MAX_FILENAME_SIZE + 5];
 	FILE *fileIn;
 
-	strcpy(builtPath, name);
-	strcat(builtPath, ".wsid");
+	sprintf(builtPath, "%s.wsid", name);
 
 	fileIn = fopen(builtPath, "r");
 	if (!fileIn)
@@ -216,8 +213,7 @@ int main(int argc, char** argv)
 	printf("Reading %s.json...", argv[2]);
 
 	/* Open file */
-	strcpy(jsonName, argv[2]);
-	strcat(jsonName, ".json");
+	sprintf(jsonName, "%s.json", argv[2]);
 	fileIn = fopen(jsonName, "r");
 	if (!fileIn)
 	{
@@ -242,10 +238,8 @@ int main(int argc, char** argv)
 	free(fileData);
 
 	/* Begin filling in the Workshop Item struct. */
-	strcpy(item.name, argv[2]);
-	strcat(item.name, ".zip");
-	strcpy(item.previewName, argv[2]);
-	strcat(item.previewName, ".png");
+	sprintf(item.name, "%s.zip", argv[2]);
+	sprintf(item.previewName, "%s.png", argv[2]);
 	item.type = STEAM_EFileType_COMMUNITY;
 
 	/* Verify the JSON script. */
