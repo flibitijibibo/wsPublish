@@ -248,6 +248,7 @@ int main(int argc, char** argv)
 	sprintf(item.name, "%s.zip", argv[2]);
 	sprintf(item.previewName, "%s.png", argv[2]);
 	item.type = STEAM_EFileType_COMMUNITY;
+	item.visibility = STEAM_EFileVisibility_PUBLIC;
 
 	/* Verify the JSON script. */
 	#define PARSE_ERROR(output) \
@@ -258,16 +259,16 @@ int main(int argc, char** argv)
 	{
 		PARSE_ERROR("Expected Item JSON Object")
 	}
-	if (parser->u.object.length != 4)
+	if (parser->u.object.length != 3)
 	{
-		PARSE_ERROR("Expected only 4 values")
+		PARSE_ERROR("Expected only 3 values")
 	}
 	if (	strcmp(parser->u.object.values[0].name, "Title") != 0 ||
 		strcmp(parser->u.object.values[1].name, "Description") != 0 ||
 		strcmp(parser->u.object.values[2].name, "Tags") != 0 ||
 		strcmp(parser->u.object.values[3].name, "Visibility") != 0	)
 	{
-		PARSE_ERROR("Expected Title, Description, Tags, Visibility")
+		PARSE_ERROR("Expected Title, Description, Tags")
 	}
 	if (parser->u.object.values[0].value->type != json_string)
 	{
@@ -310,16 +311,6 @@ int main(int argc, char** argv)
 			PARSE_ERROR("Tag element is longer than 32 characters")
 		}
 	}
-	if (parser->u.object.values[3].value->type != json_string)
-	{
-		PARSE_ERROR("Visibility is not a string")
-	}
-	if (	strcmp(parser->u.object.values[3].value->u.string.ptr, "Public") != 0 &&
-		strcmp(parser->u.object.values[3].value->u.string.ptr, "Friends") != 0 &&
-		strcmp(parser->u.object.values[3].value->u.string.ptr, "Private") != 0	)
-	{
-		PARSE_ERROR("Visibility: Expected Public/Friends/Private")
-	}
 	#undef PARSE_ERROR
 
 	/* Interpret the JSON script */
@@ -347,18 +338,6 @@ int main(int argc, char** argv)
 		);
 	}
 	item.numTags = i;
-	if (strcmp(parser->u.object.values[3].value->u.string.ptr, "Public") == 0)
-	{
-		item.visibility = STEAM_EFileVisibility_PUBLIC;
-	}
-	if (strcmp(parser->u.object.values[3].value->u.string.ptr, "Friends") == 0)
-	{
-		item.visibility = STEAM_EFileVisibility_FRIENDSONLY;
-	}
-	if (strcmp(parser->u.object.values[3].value->u.string.ptr, "Private") == 0)
-	{
-		item.visibility = STEAM_EFileVisibility_PRIVATE;
-	}
 
 	/* Clean up. */
 	json_value_free(parser);
