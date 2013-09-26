@@ -4,15 +4,17 @@
 
 #include "platform.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
+#include <dirent.h>
 #else
 #warning You probably want to check your platform includes...
 #endif
-
-#include <physfs.h>
 
 void PLATFORM_EnumerateFiles(
 	const char *argv0,
@@ -20,15 +22,28 @@ void PLATFORM_EnumerateFiles(
 	void *data,
 	PLATFORM_PrintFile callback
 ) {
-	/* TODO: Replace this, we should not need PhysicsFS. */
-	PHYSFS_init(argv0);
-	PHYSFS_mount(directory, directory, 1);
-	PHYSFS_enumerateFilesCallback(
-		directory,
-		(PHYSFS_EnumFilesCallback) callback,
-		data
-	);
-	PHYSFS_deinit();
+#if defined(_WIN32)
+#error TODO: Win32 directory listing!
+#elif defined(__linux__) || defined(__APPLE__)
+	DIR *dir = NULL;
+	struct dirent *de = NULL;
+
+	dir = opendir(directory);
+	if (!dir)
+	{
+		printf("Could not find directory %s\n", directory);
+		return;
+	}
+	for (de = readdir(dir); de != NULL; de = readdir(dir))
+	{
+		if (	strcmp(de->d_name, "..") == 0 ||
+			strcmp(de->d_name, ".") == 0	)
+		{
+			continue;
+		}
+		callback(data, directory, de->d_name);
+	}
+#endif
 }
 
 const char *PLATFORM_GetDirectorySeparator()
