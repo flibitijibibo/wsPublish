@@ -176,13 +176,12 @@ int main(int argc, char** argv)
 	if (	argc < 3 ||
 		argc > 3 ||
 		!(	CHECK_STRING("upload")  ||
-			CHECK_STRING("publish") ||
 			CHECK_STRING("update")  ||
 			CHECK_STRING("delete")	)	)
 	{
 		printf(
 			"Usage: %s ACTION FOLDER\n"
-			"\tACTION: upload, publish, update, delete\n"
+			"\tACTION: upload, update, delete\n"
 			"\tFOLDER: Folder name of the Workshop item\n",
 			argv[0]
 		);
@@ -440,42 +439,6 @@ int main(int argc, char** argv)
 		STEAM_ShareFile(item.previewName);
 		printf(" Done!\n\n");
 	}
-	else if (CHECK_STRING("publish"))
-	{
-		/* Ensure all files are on Steam Cloud */
-		printf("Verifying Steam Cloud entries...\n");
-
-		/* Check for the zipfile in Steam Cloud */
-		if (	STEAM_FileExists(item.name) &&
-			STEAM_FileExists(item.previewName) )
-		{
-			printf("\t%s is in the cloud.\n", argv[2]);
-		}
-		else
-		{
-			printf(
-				"\t%s is not in the cloud! Exiting.\n",
-				argv[2]
-			);
-			goto cleanup;
-		}
-		printf("Verification complete! Beginning publish process.\n\n");
-
-		/* Publish all files on Steam Workshop */
-		printf("Queueing %s for Workshop publication...", argv[2]);
-		STEAM_PublishFile(
-			STEAM_GetAppID(),
-			item.name,
-			item.previewName,
-			item.title,
-			item.description,
-			item.tags,
-			item.numTags,
-			item.visibility,
-			item.type
-		);
-		printf(" Done!\n\n");
-	}
 	else if (CHECK_STRING("update"))
 	{
 		/* Be sure all files are on Steam Workshop */
@@ -540,6 +503,57 @@ int main(int argc, char** argv)
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
 	printf("\nOperation Completed!\n");
+
+	/* There may be some operations with a second part... */
+	if (CHECK_STRING("upload"))
+	{
+		/* But wait, there's more! */
+		operationRunning = 1;
+
+		/* Ensure all files are on Steam Cloud */
+		printf("\nVerifying Steam Cloud entries...");
+
+		/* Check for the zipfile in Steam Cloud */
+		if (	STEAM_FileExists(item.name) &&
+			STEAM_FileExists(item.previewName) )
+		{
+			printf(" %s is in the cloud.\n", argv[2]);
+		}
+		else
+		{
+			printf(
+				" %s is not in the cloud! Exiting.\n",
+				argv[2]
+			);
+			goto cleanup;
+		}
+		printf("Verification complete! Beginning publish process.\n\n");
+
+		/* Publish all files on Steam Workshop */
+		printf("Queueing %s for Workshop publication...", argv[2]);
+		STEAM_PublishFile(
+			STEAM_GetAppID(),
+			item.name,
+			item.previewName,
+			item.title,
+			item.description,
+			item.tags,
+			item.numTags,
+			item.visibility,
+			item.type
+		);
+		printf(" Done!\n\n");
+
+		/* Moar callbacks... */
+		printf("Running Steam callbacks...\n");
+		while (operationRunning > 0)
+		{
+			puts("...");
+			STEAM_Update();
+			PLATFORM_Sleep(UPDATE_TIME_MS);
+		}
+		printf("\nOperation Completed!\n");
+	}
 
 	/* Clean up. We out. */
 cleanup:
