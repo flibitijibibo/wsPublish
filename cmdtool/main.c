@@ -40,7 +40,7 @@ typedef struct CMD_WorkshopItem_s
 	char previewName[MAX_FILENAME_SIZE + 4];
 	char title[64]; /* FIXME: This character limit is arbitrary! */
 	char description[8000]; /* Max, according to TF2 wiki */
-	char **tags; /* FIXME: Not using malloc here would be super rad. */
+	const char *tags[4];
 	int numTags;
 	STEAM_EFileVisibility visibility;
 	STEAM_EFileType type;
@@ -168,6 +168,9 @@ int main(int argc, char** argv)
 	void *fileData;
 	size_t fileSize = 0;
 
+	/* Category checks */
+	int categories[3];
+
 	/* Iterator Variable */
 	int i;
 
@@ -259,16 +262,16 @@ int main(int argc, char** argv)
 	{
 		PARSE_ERROR("Expected Item JSON Object")
 	}
-	if (parser->u.object.length != 3)
+	if (parser->u.object.length != 4)
 	{
-		PARSE_ERROR("Expected only 3 values")
+		PARSE_ERROR("Expected only 4 values")
 	}
 	if (	strcmp(parser->u.object.values[0].name, "Title") != 0 ||
 		strcmp(parser->u.object.values[1].name, "Description") != 0 ||
-		strcmp(parser->u.object.values[2].name, "Tags") != 0 ||
-		strcmp(parser->u.object.values[3].name, "Visibility") != 0	)
+		strcmp(parser->u.object.values[2].name, "Type") != 0 ||
+		strcmp(parser->u.object.values[3].name, "Category") != 0	)
 	{
-		PARSE_ERROR("Expected Title, Description, Tags")
+		PARSE_ERROR("Expected Title, Description, Type, Category")
 	}
 	if (parser->u.object.values[0].value->type != json_string)
 	{
@@ -286,32 +289,39 @@ int main(int argc, char** argv)
 	{
 		PARSE_ERROR("Description is longer than 8000 characters")
 	}
-	if (parser->u.object.values[2].value->type != json_array)
+	if (parser->u.object.values[2].value->type != json_string)
 	{
-		PARSE_ERROR("Tags is not an array")
+		PARSE_ERROR("Type is not a string")
 	}
-	if (parser->u.object.values[2].value->u.array.length < 1)
+	if (parser->u.object.values[2].value->u.string.length > 16)
 	{
-		PARSE_ERROR("Tags is an empty array")
+		PARSE_ERROR("Type is longer than 16 characters")
 	}
-	if (parser->u.object.values[2].value->u.array.length > 32)
+	if (parser->u.object.values[3].value->type != json_array)
 	{
-		PARSE_ERROR("Tags has more than 32 elements")
+		PARSE_ERROR("Category is not an array")
+	}
+	if (parser->u.object.values[3].value->u.array.length < 1)
+	{
+		PARSE_ERROR("Category is an empty array")
+	}
+	if (parser->u.object.values[3].value->u.array.length > 3)
+	{
+		PARSE_ERROR("Category has more than 3 elements")
 	}
 	for (	i = 0;
-		i < parser->u.object.values[2].value->u.array.length;
+		i < parser->u.object.values[3].value->u.array.length;
 		i += 1
 	) {
-		if (parser->u.object.values[2].value->u.array.values[i]->type != json_string)
+		if (parser->u.object.values[3].value->u.array.values[i]->type != json_string)
 		{
-			PARSE_ERROR("Tag element is not a string")
+			PARSE_ERROR("Category element is not a string")
 		}
-		if (parser->u.object.values[2].value->u.array.values[i]->u.string.length > 32)
+		if (parser->u.object.values[3].value->u.array.values[i]->u.string.length > 16)
 		{
-			PARSE_ERROR("Tag element is longer than 32 characters")
+			PARSE_ERROR("Category element is longer than 16 characters")
 		}
 	}
-	#undef PARSE_ERROR
 
 	/* Interpret the JSON script */
 	strcpy(
@@ -322,22 +332,60 @@ int main(int argc, char** argv)
 		item.description,
 		parser->u.object.values[1].value->u.string.ptr
 	);
-	/* FIXME: malloc, ugh. */
-	item.tags = (char**) malloc(
-		sizeof(char*) *
-		 parser->u.object.values[2].value->u.array.length
-	);
+
+	/* TODO: Just check for !Map, do something like categories later. */
+	if (strcmp(parser->u.object.values[2].value->u.string.ptr, "Map") != 0)
+	{
+		PARSE_ERROR("Type: Expected Map")
+	}
+
 	for (	i = 0;
-		i < parser->u.object.values[2].value->u.array.length;
+		i < parser->u.object.values[3].value->u.array.length;
 		i += 1
 	) {
-		item.tags[i] = (char*) malloc(sizeof(char) * 33);
-		strcpy(
-			item.tags[i],
-			parser->u.object.values[2].value->u.array.values[i]->u.string.ptr
-		);
+		#define COMPARE_TAG(categoryName) \
+			strcmp( \
+				parser->u.object.values[3].value->u.array.values[i]->u.string.ptr, \
+				categoryName \
+			) == 0
+		if (COMPARE_TAG("Singleplayer"))
+		{
+			categories[0] = 1;
+		}
+		else if (COMPARE_TAG("Coop"))
+		{
+			categories[1] = 1;
+		}
+		else if (COMPARE_TAG("Multiplayer"))
+		{
+			categories[2] = 1;
+		}
+		else
+		{
+			PARSE_ERROR("Category: Expected Singleplayer, Coop, Multiplayer")
+		}
+		#undef COMPARE_TAG
 	}
-	item.numTags = i;
+	#undef PARSE_ERROR
+
+	/* TODO: Assuming Map, do something like categories later. */
+	item.tags[0] = "Map";
+	item.numTags = 1;
+	if (categories[0])
+	{
+		item.tags[item.numTags] = "Singleplayer";
+		item.numTags += 1;
+	}
+	if (categories[1])
+	{
+		item.tags[item.numTags] = "Coop";
+		item.numTags += 1;
+	}
+	if (categories[2])
+	{
+		item.tags[item.numTags] = "Multiplayer";
+		item.numTags += 1;
+	}
 
 	/* Clean up. */
 	json_value_free(parser);
@@ -536,14 +584,6 @@ int main(int argc, char** argv)
 
 	/* Clean up. We out. */
 cleanup:
-	if (!item.tags)
-	{
-		for (i = 0; i < item.numTags; i += 1)
-		{
-			free(item.tags[i]);
-		}
-		free(item.tags);
-	}
 	STEAM_Shutdown();
 	return 0;
 
