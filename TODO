@@ -1,4 +1,3 @@
 - Merge `upload` and `update` operation. Treat it more like SteamPipe!
 	- The only difference should be the WSID check to prevent dupe uploads.
-- `list` operation!
 - Ask for json/png file in the folder. zip mechanism is already set up for this.

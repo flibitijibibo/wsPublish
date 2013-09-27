@@ -51,6 +51,12 @@ static CMD_WorkshopItem_t item;
 static unsigned long itemID;
 static char *itemName;
 
+/* Used for `list` operation */
+static unsigned long wsIDs[100]; /* FIXME: 100 is arbitrary! */
+static int numWSIDs = 0;
+static int currentWSID = 0;
+static int lastWSID = -1;
+
 /* Is the callback running? */
 static int operationRunning = 1;
 
@@ -114,7 +120,16 @@ void DELEGATECALL CMD_OnEnumeratedFiles(
 	const unsigned long *fileIDs,
 	const int numFileIDs
 ) {
-	/* TODO */
+	int i;
+	if (success)
+	{
+		numWSIDs = numFileIDs;
+		for (i = 0; i < numFileIDs; i += 1)
+		{
+			wsIDs[i] = fileIDs[i];
+		}
+	}
+	operationRunning -= 1;
 }
 
 void DELEGATECALL CMD_OnReceivedFileInfo(
@@ -128,6 +143,7 @@ void DELEGATECALL CMD_OnReceivedFileInfo(
 		"\tTitle: %s\n\tDescription: %s\n\tTags: %s\n",
 		fileID, title, description, tags
 	);
+	currentWSID += 1;
 }
 
 void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
@@ -175,8 +191,8 @@ int main(int argc, char** argv)
 {
 	#define CHECK_STRING(string) (strcmp(argv[1], string) == 0)
 
-	/* JSON Filename */
-	char jsonName[MAX_FILENAME_SIZE + 5];
+	/* JSON/PNG Filename Storage */
+	char fileName[(MAX_FILENAME_SIZE * 2) + 1 + 5];
 
 	/* JSON Handles */
 	json_value *parser;
@@ -197,16 +213,18 @@ int main(int argc, char** argv)
 
 	/* Verify Command Line Arguments */
 
-	if (	/* TODO: !(argc == 2 && CHECK_STRING("list")) && */
+	if (	!(argc == 2 && CHECK_STRING("list")) &&
 		!(argc == 3 &&
 		(	CHECK_STRING("upload")  ||
 			CHECK_STRING("update")  ||
 			CHECK_STRING("delete")	)	)	)
 	{
 		printf(
-			"Usage: %s ACTION FOLDER\n"
-			"\tACTION: upload, update, delete\n"
-			"\tFOLDER: Folder name of the Workshop item\n",
+			"Usage: %s ACTION FOLDER FILEID\n"
+			"\tACTION: upload, update, delete, list\n"
+			"\tFOLDER: Folder name of the Workshop item\n"
+			"\tFILEID: The Workshop ID ('update', 'delete')\n"
+			"\tFor 'list', a folder name is NOT required.\n",
 			argv[0]
 		);
 		return 0;
@@ -237,20 +255,52 @@ int main(int argc, char** argv)
 	}
 	printf("Steam initialized!\n\n");
 
+	/* A list is very simple, so try this first and skip the rest. */
+	if (CHECK_STRING("list"))
+	{
+		printf("Queueing Workshop list callback...\n");
+		STEAM_EnumeratePublishedFiles();
+		printf("Done!\n\nRunning callbacks...\n");
+		while (operationRunning > 0)
+		{
+			puts("...");
+			STEAM_Update();
+			PLATFORM_Sleep(UPDATE_TIME_MS);
+		}
+		printf("Done! Running published file queries...\n");
+		while (currentWSID < numWSIDs)
+		{
+			if (currentWSID > lastWSID)
+			{
+				printf(
+					"Getting file info for %lu",
+					wsIDs[currentWSID]
+				);
+				STEAM_GetPublishedFileInfo(wsIDs[currentWSID]);
+				lastWSID += 1;
+			}
+			puts("...");
+			STEAM_Update();
+			PLATFORM_Sleep(UPDATE_TIME_MS);
+		}
+		printf("Done!\n\nOperation Completed!\n");
+		goto cleanup;
+	}
+
 	/* Assign this for the callbacks */
 	itemName = argv[2];
 
 	/* Verify Workshop Item Ccripts */
 
 	printf("Verifying Workshop item JSON script...\n");
-	printf("Reading %s.json...", argv[2]);
+	printf("Reading %s/%s.json...", argv[2], argv[2]);
 
 	/* Open file */
-	sprintf(jsonName, "%s.json", argv[2]);
-	fileIn = fopen(jsonName, "r");
+	sprintf(fileName, "%s/%s.json", argv[2], argv[2]);
+	fileIn = fopen(fileName, "r");
 	if (!fileIn)
 	{
-		printf(" %s was not found! Exiting.\n", jsonName);
+		printf(" %s was not found! Exiting.\n", fileName);
 		goto cleanup;
 	}
 
@@ -453,7 +503,8 @@ int main(int argc, char** argv)
 		printf(" Done!\n");
 
 		/* Read the PNG file into memory. Ugh. */
-		fileIn = fopen(item.previewName, "rb");
+		sprintf(fileName, "%s/%s.png", argv[2], argv[2]);
+		fileIn = fopen(fileName, "rb");
 		fseek(fileIn, 0, SEEK_END);
 		fileSize = ftell(fileIn);
 		rewind(fileIn);
