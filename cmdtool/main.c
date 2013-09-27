@@ -73,17 +73,9 @@ void DELEGATECALL CMD_OnSharedFile(const int success)
 
 void DELEGATECALL CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
-	FILE *fileOut;
-	char builtPath[MAX_FILENAME_SIZE + 5];
 	if (success)
 	{
 		printf("FileID: %lu\n", fileID);
-
-		sprintf(builtPath, "%s.wsid", itemName);
-
-		fileOut = fopen(builtPath, "w");
-		fprintf(fileOut, "%lu", fileID);
-		fclose(fileOut);
 	}
 	else
 	{
@@ -99,19 +91,6 @@ void DELEGATECALL CMD_OnUpdatedFile(const int success)
 
 void DELEGATECALL CMD_OnDeletedFile(const int success)
 {
-	char builtPath[MAX_FILENAME_SIZE + 5];
-	if (success)
-	{
-		sprintf(builtPath, "%s.wsid", itemName);
-
-		remove(builtPath);
-
-		printf("%s has been deleted.\n", builtPath);
-	}
-	else
-	{
-		printf("FileID still exists, due to failure\n");
-	}
 	operationRunning = 0;
 }
 
@@ -129,7 +108,8 @@ void DELEGATECALL CMD_OnEnumeratedFiles(
 			wsIDs[i] = fileIDs[i];
 		}
 	}
-	operationRunning -= 1;
+	printf("Found %i files.\n", numFileIDs);
+	operationRunning = 0;
 }
 
 void DELEGATECALL CMD_OnReceivedFileInfo(
@@ -163,28 +143,86 @@ void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *
 	printf("\tAdded %s to zipfile.\n", builtName);
 }
 
-unsigned long CMD_GetFileID(const char *name)
+int CMD_List()
 {
-	unsigned long returnVal;
-	char builtPath[MAX_FILENAME_SIZE + 5];
-	FILE *fileIn;
-
-	sprintf(builtPath, "%s.wsid", name);
-
-	fileIn = fopen(builtPath, "r");
-	if (!fileIn)
+	printf("Queueing Workshop list callback...\n");
+	STEAM_EnumeratePublishedFiles();
+	printf("Done!\n\nRunning callbacks...\n");
+	while (operationRunning > 0)
 	{
-		return 0;
+		puts("...");
+		STEAM_Update();
+		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
+	printf("Done!\n");
+	if (numWSIDs > 0)
+	{
+		printf("Running published file queries...\n");
+		while (currentWSID < numWSIDs)
+		{
+			if (currentWSID > lastWSID)
+			{
+				printf(
+					"Getting file info for %lu",
+					wsIDs[currentWSID]
+				);
+				STEAM_GetPublishedFileInfo(wsIDs[currentWSID]);
+				lastWSID += 1;
+			}
+			puts("...");
+			STEAM_Update();
+			PLATFORM_Sleep(UPDATE_TIME_MS);
+		}
+		printf("Done!\n\n");
+	}
+	printf("Operation Completed!\n");
 
-	returnVal = strtoul(
-		fgets(builtPath, 21, fileIn),
+	STEAM_Shutdown();
+	return 0;
+}
+
+int CMD_Delete(char *idString)
+{
+	unsigned long itemID;
+	int stringLength;
+	int i;
+
+	itemID = strtoul(
+		idString,
 		NULL,
 		0
 	);
+	stringLength = strlen(idString);
+	for (i = 0; i < stringLength; i += 1)
+	{
+		if (idString[i] < '0' || idString[i] > '9')
+		{
+			itemID = 0;
+			break;
+		}
+	}
 
-	fclose(fileIn);
-	return returnVal;
+	if (itemID == 0)
+	{
+		printf("%s is NOT a valid ID! Exiting.\n", idString);
+		return 0;
+	}
+
+	printf("Queueing %s for Workshop removal...", idString);
+	STEAM_DeletePublishedFile(itemID);
+	printf("Done!\n\n");
+
+	printf("Running Steam callbacks...\n");
+	while (operationRunning > 0)
+	{
+		puts("...");
+		STEAM_Update();
+		PLATFORM_Sleep(UPDATE_TIME_MS);
+	}
+	printf("\nOperation Completed!\n");
+
+	STEAM_Shutdown();
+	return 0;
 }
 
 int main(int argc, char** argv)
@@ -215,17 +253,16 @@ int main(int argc, char** argv)
 
 	if (	!(argc == 2 && CHECK_STRING("list")) &&
 		!(argc == 3 &&
-		(	CHECK_STRING("upload")  ||
-			CHECK_STRING("update")  ||
-			CHECK_STRING("delete")	)	)	)
+		(	CHECK_STRING("publish")  ||
+			CHECK_STRING("delete")	)	) &&
+		!(argc == 4 && CHECK_STRING("update"))	)
 	{
 		printf(
-			"Usage: %s ACTION FOLDER FILEID\n"
-			"\tACTION: upload, update, delete, list\n"
-			"\tFOLDER: Folder name of the Workshop item\n"
-			"\tFILEID: The Workshop ID ('update', 'delete')\n"
-			"\tFor 'list', a folder name is NOT required.\n",
-			argv[0]
+			"Usage:\n"
+			"\tcmdtool publish NAME       - Upload to Workshop\n"
+			"\tcmdtool update NAME FILEID - Update Workshop Entry\n"
+			"\tcmdtool delete FILEID      - Delete Workshop Entry\n"
+			"\tcmdtool list               - List Workshop Entries\n"
 		);
 		return 0;
 	}
@@ -255,36 +292,16 @@ int main(int argc, char** argv)
 	}
 	printf("Steam initialized!\n\n");
 
-	/* A list is very simple, so try this first and skip the rest. */
+	/* List is a unique operation. */
 	if (CHECK_STRING("list"))
 	{
-		printf("Queueing Workshop list callback...\n");
-		STEAM_EnumeratePublishedFiles();
-		printf("Done!\n\nRunning callbacks...\n");
-		while (operationRunning > 0)
-		{
-			puts("...");
-			STEAM_Update();
-			PLATFORM_Sleep(UPDATE_TIME_MS);
-		}
-		printf("Done! Running published file queries...\n");
-		while (currentWSID < numWSIDs)
-		{
-			if (currentWSID > lastWSID)
-			{
-				printf(
-					"Getting file info for %lu",
-					wsIDs[currentWSID]
-				);
-				STEAM_GetPublishedFileInfo(wsIDs[currentWSID]);
-				lastWSID += 1;
-			}
-			puts("...");
-			STEAM_Update();
-			PLATFORM_Sleep(UPDATE_TIME_MS);
-		}
-		printf("Done!\n\nOperation Completed!\n");
-		goto cleanup;
+		return CMD_List();
+	}
+
+	/* Delete is a unique operation. */
+	if (CHECK_STRING("delete"))
+	{
+		return CMD_Delete(argv[2]);
 	}
 
 	/* Assign this for the callbacks */
@@ -460,7 +477,7 @@ int main(int argc, char** argv)
 
 	/* Command Line Operations */
 
-	if (CHECK_STRING("upload"))
+	if (CHECK_STRING("publish"))
 	{
 		/* Create the zipfile */
 		printf("Zipping %s folder to heap...\n", argv[2]);
@@ -537,7 +554,7 @@ int main(int argc, char** argv)
 		/* Be sure all files are on Steam Workshop */
 		printf("Verifying Workshop entry...\n");
 		printf("Verifying Workshop ID for %s...", argv[2]);
-		itemID = CMD_GetFileID(argv[2]);
+		/* TODO: itemID = CMD_GetFileID(argv[2]); */
 		if (itemID == 0)
 		{
 			printf(
@@ -563,28 +580,6 @@ int main(int argc, char** argv)
 		);
 		printf(" Done!\n\n");
 	}
-	else if (CHECK_STRING("delete"))
-	{
-		/* Be sure all files are on Steam Workshop */
-		printf("Verifying Workshop entry...\n");
-		printf("Verifying Workshop ID for %s...", argv[2]);
-		itemID = CMD_GetFileID(argv[2]);
-		if (itemID == 0)
-		{
-			printf(
-				" %s has no Workshop ID! Exiting.\n",
-				argv[2]
-			);
-			goto cleanup;
-		}
-		printf(" Done!\n");
-		printf("Verification complete! Beginning delete process.\n");
-
-		/* Queue each Steam Workshop deletion */
-		printf("Queueing %s for Workshop removal...", argv[2]);
-		STEAM_DeletePublishedFile(itemID);
-		printf("Done!\n\n");
-	}
 
 	/* Steam Asynchronous Calls */
 
@@ -598,7 +593,7 @@ int main(int argc, char** argv)
 	printf("\nOperation Completed!\n");
 
 	/* There may be some operations with a second part... */
-	if (CHECK_STRING("upload"))
+	if (CHECK_STRING("publish"))
 	{
 		/* But wait, there's more! */
 		operationRunning = 1;
