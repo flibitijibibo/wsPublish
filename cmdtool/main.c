@@ -109,6 +109,14 @@ void DELEGATECALL CMD_OnDeletedFile(const int success)
 	operationRunning = 0;
 }
 
+void DELEGATECALL CMD_OnEnumeratedFiles(
+	const int success,
+	const unsigned long *fileIDs,
+	const int numFileIDs
+) {
+	/* TODO */
+}
+
 void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
 {
 	char builtName[(MAX_FILENAME_SIZE * 2) + 1 + 4];
@@ -206,7 +214,8 @@ int main(int argc, char** argv)
 			(STEAM_OnSharedFile) CMD_OnSharedFile,
 			(STEAM_OnPublishedFile) CMD_OnPublishedFile,
 			(STEAM_OnUpdatedFile) CMD_OnUpdatedFile,
-			(STEAM_OnDeletedFile) CMD_OnDeletedFile
+			(STEAM_OnDeletedFile) CMD_OnDeletedFile,
+			(STEAM_OnEnumeratedFiles) CMD_OnEnumeratedFiles
 		)
 	) {
 		printf("Steam failed to initialize!\n");
