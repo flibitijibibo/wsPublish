@@ -38,8 +38,8 @@ typedef struct CMD_WorkshopItem_s
 {
 	char name[MAX_FILENAME_SIZE + 4];
 	char previewName[MAX_FILENAME_SIZE + 4];
-	char title[64]; /* FIXME: This character limit is arbitrary! */
-	char description[8000]; /* Max, according to TF2 wiki */
+	char title[128 + 1];
+	char description[8000];
 	const char *tags[4];
 	int numTags;
 	STEAM_EFileVisibility visibility;
@@ -286,9 +286,9 @@ int main(int argc, char** argv)
 	{
 		PARSE_ERROR("Title is not a string")
 	}
-	if (parser->u.object.values[0].value->u.string.length > 64)
+	if (parser->u.object.values[0].value->u.string.length > 128)
 	{
-		PARSE_ERROR("Title is longer than 64 characters")
+		PARSE_ERROR("Title is longer than 128 characters")
 	}
 	if (parser->u.object.values[1].value->type != json_string)
 	{

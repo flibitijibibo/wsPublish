@@ -1,4 +1,6 @@
 - Merge `upload` and `update` operation. Treat it more like SteamPipe!
 	- The only difference should be the WSID check to prevent dupe uploads.
 - `list` operation! Possibly print in the style of the JSON script.
+	- GetPublishedFileDetails(), RemoteStorageGetPublishedFileDetailsResult_t
+	- m_rgcgTitle, m_rgchDescription, m_rcghTags
 - Ask for json/png file in the folder. zip mechanism is already set up for this.
