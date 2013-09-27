@@ -246,6 +246,9 @@ int main(int argc, char** argv)
 	/* Category checks */
 	int categories[3];
 
+	/* String length storage */
+	int stringLength;
+
 	/* Iterator Variable */
 	int i;
 
@@ -265,6 +268,23 @@ int main(int argc, char** argv)
 			"\tcmdtool list               - List Workshop Entries\n"
 		);
 		return 0;
+	}
+
+	/* Extra check for update's fildID */
+	if (CHECK_STRING("update"))
+	{
+		stringLength = strlen(argv[3]);
+		for (i = 0; i < stringLength; i += 1)
+		{
+			if (argv[3][i] < '0' || argv[3][i] > '9')
+			{
+				printf(
+					"update FileID %s is not valid!\n",
+					argv[3]
+				);
+				return 0;
+			}
+		}
 	}
 
 	/* A nice header message */
@@ -421,6 +441,12 @@ int main(int argc, char** argv)
 		PARSE_ERROR("Type: Expected Map")
 	}
 
+	/* Clear the categories before moving forward. */
+	categories[0] = 0;
+	categories[1] = 0;
+	categories[2] = 0;
+
+	/* Parse the category tags */
 	for (	i = 0;
 		i < parser->u.object.values[3].value->u.array.length;
 		i += 1
@@ -475,113 +501,79 @@ int main(int argc, char** argv)
 	printf(" Done!\n");
 	printf("Verification complete! Beginning Workshop operation.\n\n");
 
-	/* Command Line Operations */
+	/* Upload the file */
 
-	if (CHECK_STRING("publish"))
+	/* Create the zipfile */
+	printf("Zipping %s folder to heap...\n", argv[2]);
+	memset(&zip, 0, sizeof(zip));
+	if (!mz_zip_writer_init_heap(&zip, 0, 0))
 	{
-		/* Create the zipfile */
-		printf("Zipping %s folder to heap...\n", argv[2]);
-		memset(&zip, 0, sizeof(zip));
-		if (!mz_zip_writer_init_heap(&zip, 0, 0))
-		{
-			printf("Could not open up zip! Exiting.\n");
-			goto cleanup;
-		}
-		PLATFORM_EnumerateFiles(
-			argv[2],
+		printf("Could not open up zip! Exiting.\n");
+		goto cleanup;
+	}
+	PLATFORM_EnumerateFiles(
+		argv[2],
+		&zip,
+		(PLATFORM_PrintFile) CMD_OnFileEnumerated
+	);
+	if (	!mz_zip_writer_finalize_heap_archive(
 			&zip,
-			(PLATFORM_PrintFile) CMD_OnFileEnumerated
-		);
-		if (	!mz_zip_writer_finalize_heap_archive(
-				&zip,
-				&fileData,
-				&fileSize
-			)
-		) {
-			printf("Zipping went wrong! Exiting\n");
-			mz_zip_writer_end(&zip);
-			goto cleanup;
-		}
-		printf("Zipping Completed!\n");
-
-		/* Write to Steam Cloud */
-		printf("Writing %s to the cloud...", argv[2]);
-		if (	!STEAM_WriteFile(
-				item.name,
-				fileData,
-				fileSize
-			)
-		) {
-			printf(" Cloud write failed! Exiting.\n");
-			mz_zip_writer_end(&zip);
-			goto cleanup;
-		}
+			&fileData,
+			&fileSize
+		)
+	) {
+		printf("Zipping went wrong! Exiting\n");
 		mz_zip_writer_end(&zip);
-		printf(" Done!\n");
-
-		/* Read the PNG file into memory. Ugh. */
-		sprintf(fileName, "%s/%s.png", argv[2], argv[2]);
-		fileIn = fopen(fileName, "rb");
-		fseek(fileIn, 0, SEEK_END);
-		fileSize = ftell(fileIn);
-		rewind(fileIn);
-		fileData = malloc(sizeof(char) * fileSize);
-		fread(fileData, 1, fileSize, fileIn);
-
-		/* Write the PNG file to Steam Cloud */
-		printf("Writing %s preview image to cloud...", argv[2]);
-		if (	!STEAM_WriteFile(
-				item.previewName,
-				fileData,
-				fileSize
-			)
-		) {
-			printf(" Cloud write failed! Exiting.\n");
-			free(fileData);
-			goto cleanup;
-		}
-		free(fileData);
-		printf(" Done!\n");
-
-		/* Mark Steam Cloud files as shared */
-		printf("Queueing %s for Steam file share...", argv[2]);
-		STEAM_ShareFile(item.name);
-		STEAM_ShareFile(item.previewName);
-		printf(" Done!\n\n");
+		goto cleanup;
 	}
-	else if (CHECK_STRING("update"))
-	{
-		/* Be sure all files are on Steam Workshop */
-		printf("Verifying Workshop entry...\n");
-		printf("Verifying Workshop ID for %s...", argv[2]);
-		/* TODO: itemID = CMD_GetFileID(argv[2]); */
-		if (itemID == 0)
-		{
-			printf(
-				"%s has no Workshop ID! Exiting.\n",
-				argv[2]
-			);
-			goto cleanup;
-		}
-		printf(" Done!\n");
-		printf("Verification complete! Beginning update process.\n\n");
+	printf("Zipping Completed!\n");
 
-		/* Queue each Steam Workshop update */
-		printf("Queueing %s for Workshop update...", argv[2]);
-		STEAM_UpdatePublishedFile(
-			itemID,
+	/* Write to Steam Cloud */
+	printf("Writing %s to the cloud...", argv[2]);
+	if (	!STEAM_WriteFile(
 			item.name,
-			item.previewName,
-			item.title,
-			item.description,
-			item.tags,
-			item.numTags,
-			item.visibility
-		);
-		printf(" Done!\n\n");
+			fileData,
+			fileSize
+		)
+	) {
+		printf(" Cloud write failed! Exiting.\n");
+		mz_zip_writer_end(&zip);
+		goto cleanup;
 	}
+	mz_zip_writer_end(&zip);
+	printf(" Done!\n");
 
-	/* Steam Asynchronous Calls */
+	/* Read the PNG file into memory. Ugh. */
+	sprintf(fileName, "%s/%s.png", argv[2], argv[2]);
+	fileIn = fopen(fileName, "rb");
+	fseek(fileIn, 0, SEEK_END);
+	fileSize = ftell(fileIn);
+	rewind(fileIn);
+	fileData = malloc(sizeof(char) * fileSize);
+	fread(fileData, 1, fileSize, fileIn);
+
+	/* Write the PNG file to Steam Cloud */
+	printf("Writing %s preview image to cloud...", argv[2]);
+	if (	!STEAM_WriteFile(
+			item.previewName,
+			fileData,
+			fileSize
+		)
+	) {
+		printf(" Cloud write failed! Exiting.\n");
+		free(fileData);
+		goto cleanup;
+	}
+	free(fileData);
+	printf(" Done!\n");
+
+	/* Mark Steam Cloud files as shared */
+	printf("Queueing %s for Steam file share...", argv[2]);
+	STEAM_ShareFile(item.name);
+	STEAM_ShareFile(item.previewName);
+	printf(" Done!\n\n");
+
+	/* Wait for the Share operation to complete. */
 
 	printf("Running Steam callbacks...\n");
 	while (operationRunning > 0)
@@ -592,31 +584,32 @@ int main(int argc, char** argv)
 	}
 	printf("\nOperation Completed!\n");
 
-	/* There may be some operations with a second part... */
+	/* Now, we either publish or update. */
+
+	/* But wait, there's more! */
+	operationRunning = 1;
+
+	/* Ensure all files are on Steam Cloud */
+	printf("\nVerifying Steam Cloud entries...");
+
+	/* Check for the zipfile in Steam Cloud */
+	if (	STEAM_FileExists(item.name) &&
+		STEAM_FileExists(item.previewName) )
+	{
+		printf(" %s is in the cloud.\n", argv[2]);
+	}
+	else
+	{
+		printf(
+			" %s is not in the cloud! Exiting.\n",
+			argv[2]
+		);
+		goto cleanup;
+	}
+	printf("Verification complete! Beginning publish process.\n\n");
+
 	if (CHECK_STRING("publish"))
 	{
-		/* But wait, there's more! */
-		operationRunning = 1;
-
-		/* Ensure all files are on Steam Cloud */
-		printf("\nVerifying Steam Cloud entries...");
-
-		/* Check for the zipfile in Steam Cloud */
-		if (	STEAM_FileExists(item.name) &&
-			STEAM_FileExists(item.previewName) )
-		{
-			printf(" %s is in the cloud.\n", argv[2]);
-		}
-		else
-		{
-			printf(
-				" %s is not in the cloud! Exiting.\n",
-				argv[2]
-			);
-			goto cleanup;
-		}
-		printf("Verification complete! Beginning publish process.\n\n");
-
 		/* Publish all files on Steam Workshop */
 		printf("Queueing %s for Workshop publication...", argv[2]);
 		STEAM_PublishFile(
@@ -631,17 +624,45 @@ int main(int argc, char** argv)
 			item.type
 		);
 		printf(" Done!\n\n");
-
-		/* Moar callbacks... */
-		printf("Running Steam callbacks...\n");
-		while (operationRunning > 0)
-		{
-			puts("...");
-			STEAM_Update();
-			PLATFORM_Sleep(UPDATE_TIME_MS);
-		}
-		printf("\nOperation Completed!\n");
 	}
+	else if (CHECK_STRING("update"))
+	{
+		/* Parse the ID. We have already checked the integrity. */
+		itemID = strtoul(
+			argv[3],
+			NULL,
+			0
+		);
+
+		/* Queue each Steam Workshop update */
+		printf(
+			"Queueing %s for Workshop update with ID %lu...",
+			argv[2],
+			itemID
+		);
+		STEAM_UpdatePublishedFile(
+			itemID,
+			item.name,
+			item.previewName,
+			item.title,
+			item.description,
+			item.tags,
+			item.numTags,
+			item.visibility
+		);
+		printf(" Done!\n\n");
+	}
+
+	/* Wait for the Publish/Update operation to complete. */
+
+	printf("Running Steam callbacks...\n");
+	while (operationRunning > 0)
+	{
+		puts("...");
+		STEAM_Update();
+		PLATFORM_Sleep(UPDATE_TIME_MS);
+	}
+	printf("\nOperation Completed!\n");
 
 	/* Clean up. We out. */
 cleanup:
