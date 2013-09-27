@@ -36,6 +36,13 @@ typedef void (DELEGATECALL *STEAM_OnEnumeratedFiles)(
 	const int
 );
 
+typedef void (DELEGATECALL *STEAM_OnReceivedFileInfo)(
+	const unsigned long fileID,
+	const char *title,
+	const char *description,
+	const char *tags
+);
+
 /* Steam Init/Update/Shutdown */
 
 EXPORTFN int STEAM_Initialize(
@@ -43,7 +50,8 @@ EXPORTFN int STEAM_Initialize(
 	const STEAM_OnPublishedFile publishedFileDelegate,
 	const STEAM_OnUpdatedFile updatedFileDelegate,
 	const STEAM_OnDeletedFile deletedFileDelegate,
-	const STEAM_OnEnumeratedFiles enumeratedFilesDelegate
+	const STEAM_OnEnumeratedFiles enumeratedFilesDelegate,
+	const STEAM_OnReceivedFileInfo receivedFileInfoDelegate
 );
 
 EXPORTFN unsigned int STEAM_GetAppID();
@@ -121,6 +129,8 @@ EXPORTFN void STEAM_UpdatePublishedFile(
 EXPORTFN void STEAM_DeletePublishedFile(const unsigned long fileID);
 
 EXPORTFN void STEAM_EnumeratePublishedFiles();
+
+EXPORTFN void STEAM_GetPublishedFileInfo(const unsigned long fileID);
 
 #undef EXPORTFN
 #undef DELEGATECALL

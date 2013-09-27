@@ -117,6 +117,19 @@ void DELEGATECALL CMD_OnEnumeratedFiles(
 	/* TODO */
 }
 
+void DELEGATECALL CMD_OnReceivedFileInfo(
+	const unsigned long fileID,
+	const char *title,
+	const char *description,
+	const char *tags
+) {
+	printf(
+		"Workshop Info for file ID %lu:\n"
+		"\tTitle: %s\n\tDescription: %s\n\tTags: %s\n",
+		fileID, title, description, tags
+	);
+}
+
 void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
 {
 	char builtName[(MAX_FILENAME_SIZE * 2) + 1 + 4];
@@ -215,7 +228,8 @@ int main(int argc, char** argv)
 			(STEAM_OnPublishedFile) CMD_OnPublishedFile,
 			(STEAM_OnUpdatedFile) CMD_OnUpdatedFile,
 			(STEAM_OnDeletedFile) CMD_OnDeletedFile,
-			(STEAM_OnEnumeratedFiles) CMD_OnEnumeratedFiles
+			(STEAM_OnEnumeratedFiles) CMD_OnEnumeratedFiles,
+			(STEAM_OnReceivedFileInfo) CMD_OnReceivedFileInfo
 		)
 	) {
 		printf("Steam failed to initialize!\n");

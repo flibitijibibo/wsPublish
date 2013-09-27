@@ -15,6 +15,7 @@ private:
 	STEAM_OnUpdatedFile updatedFileDelegate;
 	STEAM_OnDeletedFile deletedFileDelegate;
 	STEAM_OnEnumeratedFiles enumeratedFilesDelegate;
+	STEAM_OnReceivedFileInfo receivedFileInfoDelegate;
 
 public:
 	SteamCallbackContainer(
@@ -22,13 +23,15 @@ public:
 		const STEAM_OnPublishedFile publishedFile,
 		const STEAM_OnUpdatedFile updatedFile,
 		const STEAM_OnDeletedFile deletedFile,
-		const STEAM_OnEnumeratedFiles enumeratedFiles
+		const STEAM_OnEnumeratedFiles enumeratedFiles,
+		const STEAM_OnReceivedFileInfo receivedFileInfo
 	) {
 		sharedFileDelegate = sharedFile;
 		publishedFileDelegate = publishedFile;
 		updatedFileDelegate = updatedFile;
 		deletedFileDelegate = deletedFile;
 		enumeratedFilesDelegate = enumeratedFiles;
+		receivedFileInfoDelegate = receivedFileInfo;
 	}
 
 	#define CHECK_FAILURE(CallbackName) \
@@ -92,7 +95,8 @@ public:
 		}
 	}
 
-	void EnumeratedFiles(RemoteStorageEnumerateUserPublishedFilesResult_t *result,
+	void EnumeratedFiles(
+		RemoteStorageEnumerateUserPublishedFilesResult_t *result,
 		bool bIOFailure
 	) {
 		unsigned long retVals[100]; /* FIXME: 100 is arbitrary! */
@@ -112,6 +116,22 @@ public:
 		}
 	}
 
+	void ReceivedFileInfo(
+		RemoteStorageGetPublishedFileDetailsResult_t *result,
+		bool bIOFailure
+	) {
+		CHECK_FAILURE("ReceivedFileInfo")
+		if (receivedFileInfoDelegate)
+		{
+			receivedFileInfoDelegate(
+				result->m_nPublishedFileId,
+				result->m_rgchTitle,
+				result->m_rgchDescription,
+				result->m_rgchTags
+			);
+		}
+	}
+
 	#undef CHECK_FAILURE
 };
 
@@ -124,7 +144,8 @@ int STEAM_Initialize(
 	const STEAM_OnPublishedFile publishedFileDelegate,
 	const STEAM_OnUpdatedFile updatedFileDelegate,
 	const STEAM_OnDeletedFile deletedFileDelegate,
-	const STEAM_OnEnumeratedFiles enumeratedFilesDelegate
+	const STEAM_OnEnumeratedFiles enumeratedFilesDelegate,
+	const STEAM_OnReceivedFileInfo receivedFileInfoDelegate
 ) {
 	if (!SteamAPI_Init())
 	{
@@ -135,7 +156,8 @@ int STEAM_Initialize(
 		publishedFileDelegate,
 		updatedFileDelegate,
 		deletedFileDelegate,
-		enumeratedFilesDelegate
+		enumeratedFilesDelegate,
+		receivedFileInfoDelegate
 	);
 	return 1;
 }
@@ -332,5 +354,26 @@ void STEAM_EnumeratePublishedFiles()
 	else
 	{
 		printf("Steam enumerate published files did not happen! D:\n");
+	}
+}
+
+void STEAM_GetPublishedFileInfo(const unsigned long fileID)
+{
+	static CCallResult<SteamCallbackContainer, RemoteStorageGetPublishedFileDetailsResult_t> receivedFileResult;
+
+	SteamAPICall_t hSteamAPICall = 0;
+	hSteamAPICall = SteamRemoteStorage()->GetPublishedFileDetails(fileID);
+
+	if (hSteamAPICall != 0)
+	{
+		receivedFileResult.Set(
+			hSteamAPICall,
+			callbackContainer,
+			&SteamCallbackContainer::ReceivedFileInfo
+		);
+	}
+	else
+	{
+		printf("Steam get published file info did not happen! D:\n");
 	}
 }
