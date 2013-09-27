@@ -30,6 +30,7 @@
 #endif
 /* End miniz Alcoholism */
 
+#define CMDTOOL_VERSION		"13.09.27"
 #define MAX_FILENAME_SIZE	32
 #define UPDATE_TIME_MS		1000
 
@@ -40,7 +41,7 @@ typedef struct CMD_WorkshopItem_s
 	char previewName[MAX_FILENAME_SIZE + 4];
 	char title[128 + 1];
 	char description[8000];
-	const char *tags[4];
+	const char *tags[5];
 	int numTags;
 	STEAM_EFileVisibility visibility;
 	STEAM_EFileType type;
@@ -145,12 +146,22 @@ void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *
 
 int CMD_List()
 {
+	int total, available;
+	STEAM_GetByteQuota(&total, &available);
+	printf(
+		"Cloud Quota for AppID %i: %i Used, %i Available, %i Total\n\n",
+		STEAM_GetAppID(),
+		total - available,
+		available,
+		total
+	);
+
 	printf("Queueing Workshop list callback...\n");
 	STEAM_EnumeratePublishedFiles();
 	printf("Done!\n\nRunning callbacks...\n");
 	while (operationRunning > 0)
 	{
-		puts("...");
+		printf(".");
 		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
@@ -169,7 +180,7 @@ int CMD_List()
 				STEAM_GetPublishedFileInfo(wsIDs[currentWSID]);
 				lastWSID += 1;
 			}
-			puts("...");
+			printf(".");
 			STEAM_Update();
 			PLATFORM_Sleep(UPDATE_TIME_MS);
 		}
@@ -215,7 +226,7 @@ int CMD_Delete(char *idString)
 	printf("Running Steam callbacks...\n");
 	while (operationRunning > 0)
 	{
-		puts("...");
+		printf(".");
 		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
@@ -252,19 +263,22 @@ int main(int argc, char** argv)
 	/* Iterator Variable */
 	int i;
 
+	/* Do not let printf buffer. */
+	setbuf(stdout, NULL);
+
 	/* Verify Command Line Arguments */
 
 	if (	!(argc == 2 && CHECK_STRING("list")) &&
 		!(argc == 3 &&
 		(	CHECK_STRING("publish")  ||
 			CHECK_STRING("delete")	)	) &&
-		!(argc == 4 && CHECK_STRING("update"))	)
+		!((argc == 4 || argc == 5) && CHECK_STRING("update"))	)
 	{
 		printf(
 			"Usage:\n"
 			"\tcmdtool publish NAME       - Upload to Workshop\n"
-			"\tcmdtool update NAME FILEID - Update Workshop Entry\n"
-			"\tcmdtool delete FILEID      - Delete Workshop Entry\n"
+			"\tcmdtool update NAME ID MSG - Update Workshop Entry\n"
+			"\tcmdtool delete ID          - Delete Workshop Entry\n"
 			"\tcmdtool list               - List Workshop Entries\n"
 		);
 		return 0;
@@ -290,9 +304,10 @@ int main(int argc, char** argv)
 	/* A nice header message */
 	printf(	"\n"
 		"/***********************************************************\n"
-		"*               wsPublish Command Line Tool                *\n"
+		"*           wsPublish Command Line Tool %s           *\n"
 		"***********************************************************/\n"
-		"\n"
+		"\n",
+		CMDTOOL_VERSION
 	);
 
 	/* Initialize Steamworks */
@@ -477,8 +492,9 @@ int main(int argc, char** argv)
 	#undef PARSE_ERROR
 
 	/* TODO: Assuming Map, do something like categories later. */
-	item.tags[0] = "Map";
-	item.numTags = 1;
+	item.tags[0] = CMDTOOL_VERSION;
+	item.tags[1] = "Map";
+	item.numTags = 2;
 	if (categories[0])
 	{
 		item.tags[item.numTags] = "Singleplayer";
@@ -578,7 +594,7 @@ int main(int argc, char** argv)
 	printf("Running Steam callbacks...\n");
 	while (operationRunning > 0)
 	{
-		puts("...");
+		printf(".");
 		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
@@ -658,7 +674,7 @@ int main(int argc, char** argv)
 	printf("Running Steam callbacks...\n");
 	while (operationRunning > 0)
 	{
-		puts("...");
+		printf(".");
 		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}

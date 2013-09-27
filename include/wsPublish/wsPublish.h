@@ -78,6 +78,8 @@ EXPORTFN int STEAM_DeleteFile(const char *name);
 
 EXPORTFN void STEAM_ShareFile(const char *name);
 
+EXPORTFN int STEAM_GetByteQuota(int *total, int *available);
+
 /* Steam UGC */
 
 typedef enum

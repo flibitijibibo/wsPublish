@@ -38,14 +38,14 @@ public:
 		if (bIOFailure) \
 		{ \
 			printf( \
-				"%s: INTERNAL STEAM ERROR: %i\n", \
+				"\n%s: INTERNAL STEAM ERROR: %i\n", \
 				CallbackName, \
 				result->m_eResult \
 			); \
 		} \
 		else \
 		{ \
-			printf("%s: SUCCESS\n", CallbackName); \
+			printf("\n%s: SUCCESS\n", CallbackName); \
 		}
 
 	void SharedFile(
@@ -225,6 +225,11 @@ void STEAM_ShareFile(const char *name)
 	{
 		printf("Steam file share did not happen! D:\n");
 	}
+}
+
+int STEAM_GetByteQuota(int *total, int *available)
+{
+	return SteamRemoteStorage()->GetQuota(total, available);
 }
 
 /* Steam UGC */
