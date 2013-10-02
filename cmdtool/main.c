@@ -213,7 +213,7 @@ int CMD_Delete(char *idString)
 
 	printf("Queueing %s for Workshop removal...", idString);
 	STEAM_DeletePublishedFile(itemID);
-	printf("Done!\n\n");
+	printf(" Done!\n\n");
 
 	printf("Running Steam callbacks...");
 	while (operationRunning > 0)
