@@ -38,21 +38,21 @@ public:
 		if (bIOFailure) \
 		{ \
 			printf( \
-				"\n%s: INTERNAL STEAM ERROR: %i\n", \
+				"\nFile %s: INTERNAL STEAM ERROR: %i\n", \
 				CallbackName, \
 				result->m_eResult \
 			); \
 		} \
 		else \
 		{ \
-			printf("\n%s: SUCCESS\n", CallbackName); \
+			printf("\nFile %s succeeded!\n", CallbackName); \
 		}
 
 	void SharedFile(
 		RemoteStorageFileShareResult_t *result,
 		bool bIOFailure
 	) {
-		CHECK_FAILURE("SharedFile")
+		CHECK_FAILURE("Share")
 		if (sharedFileDelegate)
 		{
 			sharedFileDelegate(!bIOFailure);
@@ -63,7 +63,17 @@ public:
 		RemoteStoragePublishFileResult_t *result,
 		bool bIOFailure
 	) {
-		CHECK_FAILURE("PublishedFile")
+		if (!bIOFailure)
+		{
+			printf(
+				"\nFile Publish succeeded! FileID: %llu\n",
+				result->m_nPublishedFileId
+			);
+		}
+		else
+		{
+			printf("\nFile Publish failed! No FileID returned.\n");
+		}
 		if (publishedFileDelegate)
 		{
 			publishedFileDelegate(
@@ -77,7 +87,7 @@ public:
 		RemoteStorageUpdatePublishedFileResult_t *result,
 		bool bIOFailure
 	) {
-		CHECK_FAILURE("UpdatedFile")
+		CHECK_FAILURE("Update")
 		if (updatedFileDelegate)
 		{
 			updatedFileDelegate(!bIOFailure);
@@ -88,7 +98,7 @@ public:
 		RemoteStorageDeletePublishedFileResult_t *result,
 		bool bIOFailure
 	) {
-		CHECK_FAILURE("DeletedFile")
+		CHECK_FAILURE("Delete")
 		if (deletedFileDelegate)
 		{
 			deletedFileDelegate(!bIOFailure);
@@ -99,9 +109,19 @@ public:
 		RemoteStorageEnumerateUserPublishedFilesResult_t *result,
 		bool bIOFailure
 	) {
-		unsigned long retVals[100]; /* FIXME: 100 is arbitrary! */
+		unsigned long retVals[result->m_nResultsReturned];
 		int i;
-		CHECK_FAILURE("EnumeratedFiles")
+		if (!bIOFailure)
+		{
+			printf(
+				"\nListing succeeded! %i files found.\n",
+				result->m_nResultsReturned
+			);
+		}
+		else
+		{
+			printf("\nListing failed! No files found.\n");
+		}
 		if (enumeratedFilesDelegate)
 		{
 			for (i = 0; i < result->m_nResultsReturned; i++)
@@ -120,7 +140,21 @@ public:
 		RemoteStorageGetPublishedFileDetailsResult_t *result,
 		bool bIOFailure
 	) {
-		CHECK_FAILURE("ReceivedFileInfo")
+		if (!bIOFailure)
+		{	
+			printf(
+				"\nWorkshop Info for file ID %llu:\n"
+				"\tTitle: %s\n\tDescription: %s\n\tTags: %s\n",
+				result->m_nPublishedFileId,
+				result->m_rgchTitle,
+				result->m_rgchDescription,
+				result->m_rgchTags
+			);
+		}
+		else
+		{
+			printf("\nFile Listing failed! No info found.\n");
+		}
 		if (receivedFileInfoDelegate)
 		{
 			receivedFileInfoDelegate(

@@ -30,7 +30,7 @@
 #endif
 /* End miniz Alcoholism */
 
-#define CMDTOOL_VERSION		"13.09.27"
+#define CMDTOOL_VERSION		"13.10.02"
 #define MAX_FILENAME_SIZE	32
 #define UPDATE_TIME_MS		1000
 
@@ -69,19 +69,18 @@ static int operationRunning = 1;
 
 void DELEGATECALL CMD_OnSharedFile(const int success)
 {
-	operationRunning = 0;
+	if (success)
+	{
+		operationRunning = 0;
+	}
+	else
+	{
+		operationRunning = -1;
+	}
 }
 
 void DELEGATECALL CMD_OnPublishedFile(const int success, const unsigned long fileID)
 {
-	if (success)
-	{
-		printf("FileID: %lu\n", fileID);
-	}
-	else
-	{
-		printf("No FileID, due to failure\n");
-	}
 	operationRunning = 0;
 }
 
@@ -109,21 +108,16 @@ void DELEGATECALL CMD_OnEnumeratedFiles(
 			wsIDs[i] = fileIDs[i];
 		}
 	}
-	printf("Found %i files.\n", numFileIDs);
 	operationRunning = 0;
 }
 
 void DELEGATECALL CMD_OnReceivedFileInfo(
+	const int success,
 	const unsigned long fileID,
 	const char *title,
 	const char *description,
 	const char *tags
 ) {
-	printf(
-		"Workshop Info for file ID %lu:\n"
-		"\tTitle: %s\n\tDescription: %s\n\tTags: %s\n",
-		fileID, title, description, tags
-	);
 	currentWSID += 1;
 }
 
@@ -156,25 +150,24 @@ int CMD_List()
 		total
 	);
 
-	printf("Queueing Workshop list callback...\n");
+	printf("Queueing Workshop list callback...");
 	STEAM_EnumeratePublishedFiles();
-	printf("Done!\n\nRunning callbacks...\n");
+	printf(" Done!\n\nRunning callbacks...");
 	while (operationRunning > 0)
 	{
 		printf(".");
 		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
-	printf("Done!\n");
 	if (numWSIDs > 0)
 	{
-		printf("Running published file queries...\n");
+		printf("\nRunning published file queries.\n");
 		while (currentWSID < numWSIDs)
 		{
 			if (currentWSID > lastWSID)
 			{
 				printf(
-					"Getting file info for %lu",
+					"Getting file info for %lu...",
 					wsIDs[currentWSID]
 				);
 				STEAM_GetPublishedFileInfo(wsIDs[currentWSID]);
@@ -184,7 +177,6 @@ int CMD_List()
 			STEAM_Update();
 			PLATFORM_Sleep(UPDATE_TIME_MS);
 		}
-		printf("Done!\n\n");
 	}
 	printf("Operation Completed!\n");
 
@@ -223,7 +215,7 @@ int CMD_Delete(char *idString)
 	STEAM_DeletePublishedFile(itemID);
 	printf("Done!\n\n");
 
-	printf("Running Steam callbacks...\n");
+	printf("Running Steam callbacks...");
 	while (operationRunning > 0)
 	{
 		printf(".");
@@ -538,11 +530,11 @@ int main(int argc, char** argv)
 			&fileSize
 		)
 	) {
-		printf("Zipping went wrong! Exiting\n");
+		printf("Zipping went wrong! Exiting.\n");
 		mz_zip_writer_end(&zip);
 		goto cleanup;
 	}
-	printf("Zipping Completed!\n");
+	printf("Zipping Completed!\n\n");
 
 	/* Write to Steam Cloud */
 	printf("Writing %s to the cloud...", argv[2]);
@@ -591,14 +583,19 @@ int main(int argc, char** argv)
 
 	/* Wait for the Share operation to complete. */
 
-	printf("Running Steam callbacks...\n");
+	printf("Running Steam callbacks...");
 	while (operationRunning > 0)
 	{
 		printf(".");
 		STEAM_Update();
 		PLATFORM_Sleep(UPDATE_TIME_MS);
 	}
-	printf("\nOperation Completed!\n");
+
+	if (operationRunning == -1)
+	{
+		printf("Exiting.\n");
+		goto cleanup;
+	}
 
 	/* Now, we either publish or update. */
 
@@ -671,7 +668,7 @@ int main(int argc, char** argv)
 
 	/* Wait for the Publish/Update operation to complete. */
 
-	printf("Running Steam callbacks...\n");
+	printf("Running Steam callbacks...");
 	while (operationRunning > 0)
 	{
 		printf(".");
