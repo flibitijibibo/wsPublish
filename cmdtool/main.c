@@ -170,7 +170,7 @@ int CMD_List()
 					"Getting file info for %lu...",
 					wsIDs[currentWSID]
 				);
-				STEAM_GetPublishedFileInfo(wsIDs[currentWSID]);
+				STEAM_GetPublishedFileInfo(wsIDs[currentWSID], 0);
 				lastWSID += 1;
 			}
 			printf(".");

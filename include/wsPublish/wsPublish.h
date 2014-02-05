@@ -132,7 +132,7 @@ EXPORTFN void STEAM_DeletePublishedFile(const unsigned long fileID);
 
 EXPORTFN void STEAM_EnumeratePublishedFiles();
 
-EXPORTFN void STEAM_GetPublishedFileInfo(const unsigned long fileID);
+EXPORTFN void STEAM_GetPublishedFileInfo(const unsigned long fileID, const unsigned int secondsOld);
 
 #undef EXPORTFN
 #undef DELEGATECALL

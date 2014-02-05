@@ -396,12 +396,12 @@ void STEAM_EnumeratePublishedFiles()
 	}
 }
 
-void STEAM_GetPublishedFileInfo(const unsigned long fileID)
+void STEAM_GetPublishedFileInfo(const unsigned long fileID, const unsigned int secondsOld)
 {
 	static CCallResult<SteamCallbackContainer, RemoteStorageGetPublishedFileDetailsResult_t> receivedFileResult;
 
 	SteamAPICall_t hSteamAPICall = 0;
-	hSteamAPICall = SteamRemoteStorage()->GetPublishedFileDetails(fileID);
+	hSteamAPICall = SteamRemoteStorage()->GetPublishedFileDetails(fileID, secondsOld);
 
 	if (hSteamAPICall != 0)
 	{
