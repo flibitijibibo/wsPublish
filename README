@@ -1,0 +1,48 @@
+This is wsPublish, a Steam Workshop Interop Library.
+
+Project Website: https://github.com/flibitijibibo/wsPublish
+
+License
+-------
+wsPublish is released under the zlib license. See LICENSE for details.
+
+About wsPublish
+---------------
+wsPublish was original developed as the Steam Workshop publishing tool for
+Duke Nukem 3D: Megaton Edition and Shadow Warrior Classic Redux. The project was
+commissioned by General Arcade and developed by Ethan Lee.
+
+Included is a command-line tool called cmdtool, which is a basic example of how
+wsPublish can be used to quickly manage Workshop projects. As long as your
+steam_appid.txt is in the same folder as the cmdtool executable, it should be
+usable with your game immediately (albeit with a slight catch related to tags,
+search main.c for a couple TODO lines about that).
+
+The main intention is to allow users to integrate wsPublish into their own tools
+to allow for built-in Workshop support, without the need for an additional
+program to manage their uploads.
+
+Dependencies
+------------
+Other than the Steamworks SDK, wsPublish depends on the C++ runtime and cmdtool
+depends on the C runtime. It may be possible to fix the dependency on C++ by
+making use of the C API now included in modern Steamworks SDK releases.
+
+Building wsPublish
+------------------
+Before doing anything else, extract your Steamworks SDK's "sdk" folder to the
+root of this repository. Then, to generate the build files, use CMake.
+
+	$ mkdir build
+	$ cd build
+	$ cmake ..
+
+*nix platforms and MinGW users will be able to simply type `make` after this,
+while Windows users will likely want to add a flag to the `cmake` line to
+generate a Visual Studio project (see the CMake documentation for details).
+
+Found an issue?
+---------------
+Issues and patches can be reported via GitHub:
+
+https://github.com/flibitijibibo/wsPublish/issues
