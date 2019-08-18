@@ -1,7 +1,7 @@
 
-/* vim: set et ts=3 sw=3 ft=c:
+/* vim: set et ts=3 sw=3 sts=3 ft=c:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013, 2014 James McLaughlin et al.  All rights reserved.
  * https://github.com/udp/json-parser
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,9 +68,11 @@ typedef struct
 
    void * user_data;  /* will be passed to mem_alloc and mem_free */
 
+   size_t value_extra;  /* how much extra space to allocate for values? */
+
 } json_settings;
 
-#define json_relaxed_commas 1
+#define json_enable_comments  0x01
 
 typedef enum
 {
@@ -86,6 +88,15 @@ typedef enum
 } json_type;
 
 extern const struct _json_value json_value_none;
+       
+typedef struct _json_object_entry
+{
+    json_char * name;
+    unsigned int name_length;
+    
+    struct _json_value * value;
+    
+} json_object_entry;
 
 typedef struct _json_value
 {
@@ -110,12 +121,7 @@ typedef struct _json_value
       {
          unsigned int length;
 
-         struct
-         {
-            json_char * name;
-            struct _json_value * value;
-
-         } * values;
+         json_object_entry * values;
 
          #if defined(__cplusplus) && __cplusplus >= 201103L
          decltype(values) begin () const
@@ -152,6 +158,14 @@ typedef struct _json_value
       void * object_mem;
 
    } _reserved;
+
+   #ifdef JSON_TRACK_SOURCE
+
+      /* Location of the value in the source JSON
+       */
+      unsigned int line, col;
+
+   #endif
 
 
    /* Some C++ operator sugar */
@@ -240,7 +254,7 @@ typedef struct _json_value
    #endif
 
 } json_value;
-
+       
 json_value * json_parse (const json_char * json,
                          size_t length);
 
