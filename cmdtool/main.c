@@ -23,14 +23,14 @@
 #pragma GCC diagnostic ignored "-Wlong-long"
 #endif
 
-#include "miniz.c"
+#include "miniz.h"
 
 #if !defined(_WIN32)
 #pragma GCC diagnostic pop
 #endif
 /* End miniz Alcoholism */
 
-#define CMDTOOL_VERSION		"13.10.02"
+#define CMDTOOL_VERSION		"19.08.18"
 #define MAX_FILENAME_SIZE	32
 #define UPDATE_TIME_MS		1000
 

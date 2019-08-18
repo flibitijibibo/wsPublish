@@ -46,6 +46,7 @@ SET(WSP_SRC
 
 SET(CMD_SRC
 	cmdtool/json.c
+	cmdtool/miniz.c
 	cmdtool/platform.c
 	cmdtool/main.c
 )
