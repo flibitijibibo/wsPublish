@@ -42,24 +42,24 @@ typedef struct CMD_WorkshopItem_s
 	char title[128 + 1];
 	char description[8000];
 	const char *tags[5];
-	int numTags;
+	int32_t numTags;
 	STEAM_EFileVisibility visibility;
 	STEAM_EFileType type;
 } CMD_WorkshopItem_t;
 
 /* Steam Workshop Item Information */
 static CMD_WorkshopItem_t item;
-static unsigned long itemID;
+static uint64_t itemID;
 static char *itemName;
 
 /* Used for `list` operation */
-static unsigned long wsIDs[100]; /* FIXME: 100 is arbitrary! */
-static int numWSIDs = 0;
-static int currentWSID = 0;
-static int lastWSID = -1;
+static uint64_t wsIDs[100]; /* FIXME: 100 is arbitrary! */
+static int32_t numWSIDs = 0;
+static int32_t currentWSID = 0;
+static int32_t lastWSID = -1;
 
 /* Is the callback running? */
-static int operationRunning = 1;
+static int32_t operationRunning = 1;
 
 #ifdef _WIN32
 #define DELEGATECALL __stdcall
@@ -67,7 +67,7 @@ static int operationRunning = 1;
 #define DELEGATECALL
 #endif
 
-void DELEGATECALL CMD_OnSharedFile(const int success)
+void DELEGATECALL CMD_OnSharedFile(const int32_t success)
 {
 	if (success)
 	{
@@ -79,27 +79,30 @@ void DELEGATECALL CMD_OnSharedFile(const int success)
 	}
 }
 
-void DELEGATECALL CMD_OnPublishedFile(const int success, const unsigned long fileID)
+void DELEGATECALL CMD_OnPublishedFile(
+	const int32_t success,
+	const uint64_t fileID
+) {
+	operationRunning = 0;
+}
+
+void DELEGATECALL CMD_OnUpdatedFile(const int32_t success)
 {
 	operationRunning = 0;
 }
 
-void DELEGATECALL CMD_OnUpdatedFile(const int success)
+void DELEGATECALL CMD_OnDeletedFile(const int32_t success)
 {
 	operationRunning = 0;
-}
-
-void DELEGATECALL CMD_OnDeletedFile(const int success)
-{
-	operationRunning = 0;
+	currentWSID += 1;
 }
 
 void DELEGATECALL CMD_OnEnumeratedFiles(
-	const int success,
-	const unsigned long *fileIDs,
-	const int numFileIDs
+	const int32_t success,
+	const uint64_t *fileIDs,
+	const int32_t numFileIDs
 ) {
-	int i;
+	int32_t i;
 	if (success)
 	{
 		numWSIDs = numFileIDs;
@@ -112,8 +115,8 @@ void DELEGATECALL CMD_OnEnumeratedFiles(
 }
 
 void DELEGATECALL CMD_OnReceivedFileInfo(
-	const int success,
-	const unsigned long fileID,
+	const int32_t success,
+	const uint64_t fileID,
 	const char *title,
 	const char *description,
 	const char *tags
@@ -121,8 +124,11 @@ void DELEGATECALL CMD_OnReceivedFileInfo(
 	currentWSID += 1;
 }
 
-void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *file)
-{
+void DELEGATECALL CMD_OnFileEnumerated(
+	void *data,
+	const char *dir,
+	const char *file
+) {
 	char builtName[(MAX_FILENAME_SIZE * 2) + 1 + 4];
 
 	sprintf(builtName, "%s/%s", dir, file);
@@ -138,9 +144,9 @@ void DELEGATECALL CMD_OnFileEnumerated(void *data, const char *dir, const char *
 	printf("\tAdded %s to zipfile.\n", builtName);
 }
 
-int CMD_List()
+int32_t CMD_List()
 {
-	int total, available;
+	uint64_t total, available;
 	STEAM_GetByteQuota(&total, &available);
 	printf(
 		"Cloud Quota for AppID %i: %i Used, %i Available, %i Total\n\n",
@@ -170,7 +176,8 @@ int CMD_List()
 					"Getting file info for %lu...",
 					wsIDs[currentWSID]
 				);
-				STEAM_GetPublishedFileInfo(wsIDs[currentWSID], 0);
+				//STEAM_GetPublishedFileInfo(wsIDs[currentWSID], 0);
+				STEAM_DeletePublishedFile(wsIDs[currentWSID]);
 				lastWSID += 1;
 			}
 			printf(".");
@@ -184,11 +191,11 @@ int CMD_List()
 	return 0;
 }
 
-int CMD_Delete(char *idString)
+int32_t CMD_Delete(char *idString)
 {
-	unsigned long itemID;
-	int stringLength;
-	int i;
+	uint64_t itemID;
+	int32_t stringLength;
+	int32_t i;
 
 	itemID = strtoul(
 		idString,
@@ -247,13 +254,13 @@ int main(int argc, char** argv)
 	size_t fileSize = 0;
 
 	/* Category checks */
-	int categories[3];
+	int32_t categories[3];
 
 	/* String length storage */
-	int stringLength;
+	int32_t stringLength;
 
 	/* Iterator Variable */
-	int i;
+	int32_t i;
 
 	/* Do not let printf buffer. */
 	setbuf(stdout, NULL);

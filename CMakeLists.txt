@@ -4,53 +4,37 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(wsPublish)
 
-# Build Options
-OPTION(WSP_DEBUG "Build wsPublish with debugging symbols" ON)
-
 # Architecture Flags
 IF(APPLE)
-	SET(ARCHFLAG "-arch i386 -arch x86_64")
+	set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
 	SET(CMAKE_EXECUTABLE_SUFFIX ".osx")
+	SET(OSDIR "osx32")
 	SET(BIN_RPATH "@executable_path")
 	set(CMAKE_SKIP_BUILD_RPATH TRUE)
 	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 	set(CMAKE_INSTALL_RPATH ${BIN_RPATH})
 	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 ELSEIF(WIN32)
-	SET(ARCHFLAG "-m32")
+	# Nothing to see here...
+ELSEIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+	SET(OSDIR "linux64")
+	SET(CMAKE_EXECUTABLE_SUFFIX ".x86_64")
 ELSE()
-	# For now...
-	SET(ARCHFLAG "-m32")
+	SET(OSDIR "linux32")
 	SET(CMAKE_EXECUTABLE_SUFFIX ".x86")
-ENDIF()
-
-# Compiler Flags
-IF(WSP_DEBUG)
-	SET(CMAKE_C_FLAGS "${ARCHFLAG} -g -Wall")
-	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -g -Wall")
-ELSE()
-	SET(CMAKE_C_FLAGS "${ARCHFLAG} -O2 -Wall -pedantic")
-	SET(CMAKE_CXX_FLAGS "${ARCHFLAG} -O2 -Wall")
 ENDIF()
 
 # Steam SDK Directories
 IF(WIN32)
-	SET(STEAMINC "C:\\Users\\Ethan\ Lee\\STEAMBUILD\\sdk\\public")
-	SET(STEAMLIB "C:\\Users\\Ethan\ Lee\\STEAMBUILD\\sdk\\redistributable_bin")
+	SET(STEAMINC "${CMAKE_SOURCE_DIR}\\sdk\\public")
+	SET(STEAMLIB "${CMAKE_SOURCE_DIR}\\sdk\\redistributable_bin")
 ELSE()
-	IF(APPLE)
-		SET(HOMEDIR "Users")
-		SET(OSDIR "osx32")
-	ELSE()
-		SET(HOMEDIR "home")
-		SET(OSDIR "linux32")
-	ENDIF()
-	SET(STEAMINC "/${HOMEDIR}/flibitijibibo/Programming/cppLibraries/sdk/public")
-	SET(STEAMLIB "/${HOMEDIR}/flibitijibibo/Programming/cppLibraries/sdk/redistributable_bin/${OSDIR}")
+	SET(STEAMINC "${CMAKE_SOURCE_DIR}\\sdk/public")
+	SET(STEAMLIB "${CMAKE_SOURCE_DIR}\\sdk/redistributable_bin/${OSDIR}")
 ENDIF()
 
 INCLUDE_DIRECTORIES(
-	./include 
+	./include
 	${STEAMINC}
 )
 LINK_DIRECTORIES(${STEAMLIB})

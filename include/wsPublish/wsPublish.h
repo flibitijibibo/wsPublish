@@ -5,6 +5,8 @@
 #ifndef WSPUBLISH_H
 #define WSPUBLISH_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,25 +21,25 @@ extern "C" {
 
 /* Delegates for Steam callbacks */
 
-typedef void (DELEGATECALL *STEAM_OnSharedFile)(const int);
+typedef void (DELEGATECALL *STEAM_OnSharedFile)(const int32_t);
 
 typedef void (DELEGATECALL *STEAM_OnPublishedFile)(
-	const int,
-	const unsigned long
+	const int32_t,
+	const uint64_t
 );
 
-typedef void (DELEGATECALL *STEAM_OnUpdatedFile)(const int);
+typedef void (DELEGATECALL *STEAM_OnUpdatedFile)(const int32_t);
 
-typedef void (DELEGATECALL *STEAM_OnDeletedFile)(const int);
+typedef void (DELEGATECALL *STEAM_OnDeletedFile)(const int32_t);
 
 typedef void (DELEGATECALL *STEAM_OnEnumeratedFiles)(
-	const int,
-	const unsigned long*,
+	const int32_t,
+	const uint64_t*,
 	const int
 );
 
 typedef void (DELEGATECALL *STEAM_OnReceivedFileInfo)(
-	const unsigned long fileID,
+	const uint64_t fileID,
 	const char *title,
 	const char *description,
 	const char *tags
@@ -45,7 +47,7 @@ typedef void (DELEGATECALL *STEAM_OnReceivedFileInfo)(
 
 /* Steam Init/Update/Shutdown */
 
-EXPORTFN int STEAM_Initialize(
+EXPORTFN int32_t STEAM_Initialize(
 	const STEAM_OnSharedFile sharedFileDelegate,
 	const STEAM_OnPublishedFile publishedFileDelegate,
 	const STEAM_OnUpdatedFile updatedFileDelegate,
@@ -54,7 +56,7 @@ EXPORTFN int STEAM_Initialize(
 	const STEAM_OnReceivedFileInfo receivedFileInfoDelegate
 );
 
-EXPORTFN unsigned int STEAM_GetAppID();
+EXPORTFN uint32_t STEAM_GetAppID();
 
 EXPORTFN void STEAM_Update();
 
@@ -62,23 +64,30 @@ EXPORTFN void STEAM_Shutdown();
 
 /* Steam Cloud */
 
-EXPORTFN int STEAM_IsCloudEnabled();
+EXPORTFN int32_t STEAM_IsCloudEnabled();
 
-EXPORTFN int STEAM_FileExists(const char *name);
+EXPORTFN int32_t STEAM_FileExists(const char *name);
 
-EXPORTFN int STEAM_WriteFile(
+EXPORTFN int32_t STEAM_WriteFile(
 	const char *name,
 	const void *data,
-	const int length
+	const int32_t length
 );
 
-EXPORTFN int STEAM_ReadFile(const char *name, void *data, const int length);
+EXPORTFN int32_t STEAM_ReadFile(
+	const char *name,
+	void *data,
+	const int32_t length
+);
 
-EXPORTFN int STEAM_DeleteFile(const char *name);
+EXPORTFN int32_t STEAM_DeleteFile(const char *name);
 
 EXPORTFN void STEAM_ShareFile(const char *name);
 
-EXPORTFN int STEAM_GetByteQuota(int *total, int *available);
+EXPORTFN int32_t STEAM_GetByteQuota(
+	uint64_t *total,
+	uint64_t *available
+);
 
 /* Steam UGC */
 
@@ -106,33 +115,36 @@ typedef enum
 } STEAM_EFileType;
 
 EXPORTFN void STEAM_PublishFile(
-	const unsigned int appid,
+	const uint32_t appid,
 	const char *name,
 	const char *previewName,
 	const char *title,
 	const char *description,
 	const char **tags,
-	const int numTags,
+	const int32_t numTags,
 	const STEAM_EFileVisibility visibility,
 	const STEAM_EFileType type
 );
 
 EXPORTFN void STEAM_UpdatePublishedFile(
-	const unsigned long fileID,
+	const uint64_t fileID,
 	const char *name,
 	const char *previewName,
 	const char *title,
 	const char *description,
 	const char **tags,
-	const int numTags,
+	const int32_t numTags,
 	const STEAM_EFileVisibility visibility
 );
 
-EXPORTFN void STEAM_DeletePublishedFile(const unsigned long fileID);
+EXPORTFN void STEAM_DeletePublishedFile(const uint64_t fileID);
 
 EXPORTFN void STEAM_EnumeratePublishedFiles();
 
-EXPORTFN void STEAM_GetPublishedFileInfo(const unsigned long fileID, const unsigned int secondsOld);
+EXPORTFN void STEAM_GetPublishedFileInfo(
+	const uint64_t fileID,
+	const uint32_t secondsOld
+);
 
 #undef EXPORTFN
 #undef DELEGATECALL

@@ -109,8 +109,8 @@ public:
 		RemoteStorageEnumerateUserPublishedFilesResult_t *result,
 		bool bIOFailure
 	) {
-		unsigned long retVals[result->m_nResultsReturned];
-		int i;
+		uint64_t retVals[result->m_nResultsReturned];
+		int32_t i;
 		if (!bIOFailure)
 		{
 			printf(
@@ -173,7 +173,7 @@ static SteamCallbackContainer *callbackContainer;
 
 /* Steam Init/Update/Shutdown */
 
-int STEAM_Initialize(
+int32_t STEAM_Initialize(
 	const STEAM_OnSharedFile sharedFileDelegate,
 	const STEAM_OnPublishedFile publishedFileDelegate,
 	const STEAM_OnUpdatedFile updatedFileDelegate,
@@ -196,7 +196,7 @@ int STEAM_Initialize(
 	return 1;
 }
 
-unsigned int STEAM_GetAppID()
+uint32_t STEAM_GetAppID()
 {
 	return SteamUtils()->GetAppID();
 }
@@ -214,28 +214,31 @@ void STEAM_Shutdown()
 
 /* Steam Cloud */
 
-int STEAM_IsCloudEnabled()
+int32_t STEAM_IsCloudEnabled()
 {
 	return (	SteamRemoteStorage()->IsCloudEnabledForAccount() &&
 			SteamRemoteStorage()->IsCloudEnabledForApp()	);
 }
 
-int STEAM_FileExists(const char *name)
+int32_t STEAM_FileExists(const char *name)
 {
 	return SteamRemoteStorage()->FileExists(name);
 }
 
-int STEAM_WriteFile(const char *name, const void *data, const int length)
-{
+int32_t STEAM_WriteFile(
+	const char *name,
+	const void *data,
+	const int32_t length
+) {
 	return SteamRemoteStorage()->FileWrite(name, data, length);
 }
 
-int STEAM_ReadFile(const char *name, void *data, const int length)
+int32_t STEAM_ReadFile(const char *name, void *data, const int32_t length)
 {
 	return SteamRemoteStorage()->FileRead(name, data, length);
 }
 
-int STEAM_DeleteFile(const char *name)
+int32_t STEAM_DeleteFile(const char *name)
 {
 	return SteamRemoteStorage()->FileDelete(name);
 }
@@ -261,21 +264,24 @@ void STEAM_ShareFile(const char *name)
 	}
 }
 
-int STEAM_GetByteQuota(int *total, int *available)
+int32_t STEAM_GetByteQuota(uint64_t *total, uint64_t *available)
 {
-	return SteamRemoteStorage()->GetQuota(total, available);
+	return SteamRemoteStorage()->GetQuota(
+		(uint64*) total,
+		(uint64*) available
+	);
 }
 
 /* Steam UGC */
 
 void STEAM_PublishFile(
-	const unsigned int appid,
+	const uint32_t appid,
 	const char *name,
 	const char *previewName,
 	const char *title,
 	const char *description,
 	const char **tags,
-	const int numTags,
+	const int32_t numTags,
 	const STEAM_EFileVisibility visibility,
 	const STEAM_EFileType type
 ) {
@@ -312,13 +318,13 @@ void STEAM_PublishFile(
 }
 
 void STEAM_UpdatePublishedFile(
-	const unsigned long fileID,
+	const uint64_t fileID,
 	const char *name,
 	const char *previewName,
 	const char *title,
 	const char *description,
 	const char **tags,
-	const int numTags,
+	const int32_t numTags,
 	const STEAM_EFileVisibility visibility
 ) {
 	static CCallResult<SteamCallbackContainer, RemoteStorageUpdatePublishedFileResult_t> fileUpdateResult;
@@ -330,12 +336,20 @@ void STEAM_UpdatePublishedFile(
 	stringParams.m_nNumStrings = numTags;
 
 	SteamRemoteStorage()->UpdatePublishedFileFile(handle, name);
-	SteamRemoteStorage()->UpdatePublishedFilePreviewFile(handle, previewName);
+	SteamRemoteStorage()->UpdatePublishedFilePreviewFile(
+		handle,
+		previewName
+	);
 	SteamRemoteStorage()->UpdatePublishedFileTitle(handle, title);
-	SteamRemoteStorage()->UpdatePublishedFileDescription(handle, description);
+	SteamRemoteStorage()->UpdatePublishedFileDescription(
+		handle,
+		description
+	);
 	SteamRemoteStorage()->UpdatePublishedFileTags(handle, &stringParams);
-	SteamRemoteStorage()->UpdatePublishedFileVisibility(handle, (ERemoteStoragePublishedFileVisibility) visibility);
-
+	SteamRemoteStorage()->UpdatePublishedFileVisibility(
+		handle,
+		(ERemoteStoragePublishedFileVisibility) visibility
+	);
 
 	SteamAPICall_t hSteamAPICall = 0;
 	hSteamAPICall = SteamRemoteStorage()->CommitPublishedFileUpdate(handle);
@@ -354,7 +368,7 @@ void STEAM_UpdatePublishedFile(
 	}
 }
 
-void STEAM_DeletePublishedFile(const unsigned long fileID)
+void STEAM_DeletePublishedFile(const uint64_t fileID)
 {
 	static CCallResult<SteamCallbackContainer, RemoteStorageDeletePublishedFileResult_t> fileDeleteResult;
 
@@ -396,12 +410,17 @@ void STEAM_EnumeratePublishedFiles()
 	}
 }
 
-void STEAM_GetPublishedFileInfo(const unsigned long fileID, const unsigned int secondsOld)
-{
+void STEAM_GetPublishedFileInfo(
+	const uint64_t fileID,
+	const uint32_t secondsOld
+) {
 	static CCallResult<SteamCallbackContainer, RemoteStorageGetPublishedFileDetailsResult_t> receivedFileResult;
 
 	SteamAPICall_t hSteamAPICall = 0;
-	hSteamAPICall = SteamRemoteStorage()->GetPublishedFileDetails(fileID, secondsOld);
+	hSteamAPICall = SteamRemoteStorage()->GetPublishedFileDetails(
+		fileID,
+		secondsOld
+	);
 
 	if (hSteamAPICall != 0)
 	{
