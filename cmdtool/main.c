@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wsPublish/wsPublish.h>
+#include <wsPublish.h>
 
 #include "platform.h"
 

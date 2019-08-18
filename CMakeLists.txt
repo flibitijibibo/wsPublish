@@ -34,14 +34,14 @@ ELSE()
 ENDIF()
 
 INCLUDE_DIRECTORIES(
-	./include
+	${CMAKE_SOURCE_DIR}
 	${STEAMINC}
 )
 LINK_DIRECTORIES(${STEAMLIB})
 
 # Source Lists
 SET(WSP_SRC
-	src/wsPublish.cpp
+	wsPublish.cpp
 )
 
 SET(CMD_SRC

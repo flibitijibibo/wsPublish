@@ -24,7 +24,8 @@
  *
  */
 
-#include <wsPublish/wsPublish.h>
+#include "wsPublish.h"
+
 #include <steam/steam_api.h>
 
 /* Callbacks */
