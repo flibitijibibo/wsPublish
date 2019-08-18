@@ -18,6 +18,11 @@ steam_appid.txt is in the same folder as the cmdtool executable, it should be
 usable with your game immediately (albeit with a slight catch related to tags,
 search main.c for a couple TODO lines about that).
 
+cmdtool takes a folder name, zips up the folder, and uploads it to Steam. The
+two main files of interest are a JSON file describing the Workshop metadata and
+a PNG to be used as the preview image. The rest can be whatever your game needs.
+For an example, see flibitExample.tar.bz2.
+
 The main intention is to allow users to integrate wsPublish into their own tools
 to allow for built-in Workshop support, without the need for an additional
 program to manage their uploads.
